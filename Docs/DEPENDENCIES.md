@@ -26,9 +26,13 @@
 | Universal RP | Unity Registry | URP渲染管线 |
 
 ### QFramework 安装方式
-1. 下载地址：https://github.com/liangxiegame/QFramework
-2. 或通过 OpenUPM：`openupm add com.liangxiegame.qframework`
-3. 导入后放置于 `Assets/ThirdParty/QFramework/`
+QFramework **未发布到 OpenUPM**，必须手动安装：
+
+1. 下载地址：https://github.com/liangxiegame/QFramework/releases
+2. 选最新版（当前 `1.0.187-Unity2018Compatible`，向下兼容到 2018，在 Unity 2022.3 LTS 上可正常使用）
+3. 下载 `.unitypackage` → Unity 中 `Assets → Import Package → Custom Package` 导入
+4. 导入后将 `Assets/QFramework/` 整个移动到 `Assets/ThirdParty/QFramework/`
+5. 若弹出 API Updater 提示，选 "I Made a Backup, Go Ahead!" 让 Unity 自动升级 API
 
 ---
 
