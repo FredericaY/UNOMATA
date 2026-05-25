@@ -19,7 +19,7 @@
 
 | 包名 | 来源 | 用途 |
 |------|------|------|
-| QFramework | OpenUPM / 官网导入 | 项目架构框架 |
+| QFramework | GitHub Release (unitypackage) | 项目架构框架，导入到 `Assets/QFramework/` |
 | Cinemachine | Unity Registry | TPS相机系统 |
 | Input System | Unity Registry | 新输入系统 |
 | Animation Rigging | Unity Registry | 瞄准IK |
@@ -31,8 +31,14 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 1. 下载地址：https://github.com/liangxiegame/QFramework/releases
 2. 选最新版（当前 `1.0.187-Unity2018Compatible`，向下兼容到 2018，在 Unity 2022.3 LTS 上可正常使用）
 3. 下载 `.unitypackage` → Unity 中 `Assets → Import Package → Custom Package` 导入
-4. 导入后将 `Assets/QFramework/` 整个移动到 `Assets/ThirdParty/QFramework/`
+4. **保留默认导入路径**，不要移动：
+   - `Assets/QFramework/`     ← 框架本体
+   - `Assets/QFrameworkData/` ← 框架运行时配置（ResKit/UIKit 等，路径写死，不可移动）
 5. 若弹出 API Updater 提示，选 "I Made a Backup, Go Ahead!" 让 Unity 自动升级 API
+
+> **说明**：QFramework 不放在 `Assets/ThirdParty/` 下，原因有二：
+> 1. 官方教程/示例/菜单路径默认 `Assets/QFramework/`，保留默认便于对照学习与升级
+> 2. `QFrameworkData/` 内部硬编码该路径，移动会导致配置丢失
 
 ---
 
