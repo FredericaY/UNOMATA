@@ -146,8 +146,9 @@ namespace Unomata.Core
         public EndReason Reason;          // 结束原因
 
         // 计算伤害减免削减系数（0.0 ~ 1.0）
+        // 注意：实现时用 Math.Clamp 替换 Mathf.Clamp01，Core层禁止引用 UnityEngine
         public float DamageReductionFactor => 
-            Mathf.Clamp01((float)ChainCount / TargetCount);
+            Math.Clamp((float)ChainCount / TargetCount, 0f, 1f);
     }
 
     public enum EndReason { TimeUp, WrongCard, Manual }
