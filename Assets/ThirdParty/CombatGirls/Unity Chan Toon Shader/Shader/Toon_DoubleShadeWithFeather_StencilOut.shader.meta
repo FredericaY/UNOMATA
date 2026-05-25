@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0a1e4c9dcc0e9ea4db38ae9cb5059608
+timeCreated: 1482811030
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Toon_DoubleShadeWithFeather_StencilOut.shader
+  uploadId: 729879

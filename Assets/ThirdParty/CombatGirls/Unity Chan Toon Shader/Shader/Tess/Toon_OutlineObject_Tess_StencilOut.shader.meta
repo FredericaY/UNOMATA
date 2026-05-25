@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 06cae78b869a3234bab02eeb52197e1c
+timeCreated: 1518248482
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/Toon_OutlineObject_Tess_StencilOut.shader
+  uploadId: 729879

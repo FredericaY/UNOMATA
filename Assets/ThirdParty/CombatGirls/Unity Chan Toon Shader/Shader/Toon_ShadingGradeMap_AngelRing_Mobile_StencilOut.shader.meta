@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 8d33e4e4084e5af449f3e762fecce3c9
+timeCreated: 1496949324
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Toon_ShadingGradeMap_AngelRing_Mobile_StencilOut.shader
+  uploadId: 729879

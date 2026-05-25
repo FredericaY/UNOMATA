@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 29a860a3f3c4cec43ab821338e28eac8
+timeCreated: 1488638447
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/ToonColor_ShadingGradeMap_AngelRing_TransClipping.shader
+  uploadId: 729879

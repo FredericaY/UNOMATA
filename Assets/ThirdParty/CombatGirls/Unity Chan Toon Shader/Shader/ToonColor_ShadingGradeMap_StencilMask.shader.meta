@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6439813c08a1f8947bb0ca6599499dd7
+timeCreated: 1485041920
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/ToonColor_ShadingGradeMap_StencilMask.shader
+  uploadId: 729879

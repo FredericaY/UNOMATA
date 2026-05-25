@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: ae8d06deb98501947846000ba6cd3ab2
+timeCreated: 1518248457
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/UCTS_ShadowCaster.cginc
+  uploadId: 729879

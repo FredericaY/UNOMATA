@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: f0b2fc9b8a189134da9c7d24f361caf4
+timeCreated: 1518248482
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/Toon_DoubleShadeWithFeather_Clipping_Tess.shader
+  uploadId: 729879

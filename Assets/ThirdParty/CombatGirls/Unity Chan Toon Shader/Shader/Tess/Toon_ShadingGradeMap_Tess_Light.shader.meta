@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 356dd5af8f0d40e41b647d3d0a0555c1
+timeCreated: 1518248466
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/Toon_ShadingGradeMap_Tess_Light.shader
+  uploadId: 729879

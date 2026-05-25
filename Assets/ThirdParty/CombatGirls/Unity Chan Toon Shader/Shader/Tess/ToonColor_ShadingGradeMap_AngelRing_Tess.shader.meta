@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4876871966ca2344793e439d7391d7b0
+timeCreated: 1518248469
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/ToonColor_ShadingGradeMap_AngelRing_Tess.shader
+  uploadId: 729879

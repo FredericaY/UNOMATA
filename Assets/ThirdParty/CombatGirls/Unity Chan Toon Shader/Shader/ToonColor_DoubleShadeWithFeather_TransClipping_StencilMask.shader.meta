@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 8600b2bec3ae31145afa80084df20c61
+timeCreated: 1484879354
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/ToonColor_DoubleShadeWithFeather_TransClipping_StencilMask.shader
+  uploadId: 729879

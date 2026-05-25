@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0d799eb857c0e2c45bbdfb2c033d33e6
+timeCreated: 1518248461
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/Toon_ShadingGradeMap_Tess_StencilMask.shader
+  uploadId: 729879

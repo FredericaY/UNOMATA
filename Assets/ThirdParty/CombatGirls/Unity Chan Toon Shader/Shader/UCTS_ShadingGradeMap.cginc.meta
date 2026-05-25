@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: eca315d4d2d36194b8be3cf2a6869762
+timeCreated: 1518248457
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/UCTS_ShadingGradeMap.cginc
+  uploadId: 729879

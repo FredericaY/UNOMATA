@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 42a47eda2ed77084c9136507eadb8641
+timeCreated: 1482811030
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Toon_OutlineObject.shader
+  uploadId: 729879

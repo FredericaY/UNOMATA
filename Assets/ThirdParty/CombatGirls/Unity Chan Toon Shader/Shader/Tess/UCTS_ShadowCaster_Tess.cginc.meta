@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 6261ac20c5dfa024a98d6ce3921bab70
+timeCreated: 1518248457
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/UCTS_ShadowCaster_Tess.cginc
+  uploadId: 729879

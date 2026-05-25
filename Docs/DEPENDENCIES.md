@@ -44,13 +44,14 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 
 ## Asset Store 资产
 
-| 资产名 | 用途 | 目标目录 |
-|--------|------|---------|
-| CombatGirls - RifleCharacterPack | 玩家角色模型+动画 | `Assets/ThirdParty/CombatGirls/` |
-| Starter Assets - Third Person Controller | TPS控制器基础 | `Assets/ThirdParty/StarterAssets/` |
-| 怪物模型+动画（待填写） | 敌人 | `Assets/ThirdParty/Monsters/` |
-| 场景/地图（待填写） | 竞技场场景 | `Assets/ThirdParty/Environment/` |
-| 科幻VFX特效包（待填写） | 命中/受击/骇入特效 | `Assets/ThirdParty/VFX/` |
+| 资产名 | 用途 | 目标目录 | 状态 |
+|--------|------|---------|------|
+| CombatGirls - RifleCharacterPack | 玩家角色模型+动画 | `Assets/ThirdParty/CombatGirls/` | ✅ 已验证-方案B |
+| Starter Assets - Third Person Controller | TPS控制器基础 | `Assets/ThirdParty/StarterAssets/` | ✅ 已验证-方案B |
+| MagicaCloth2 | CombatGirls 布料物理依赖 | `Assets/ThirdParty/MagicaCloth2/` | ✅ 已导入 |
+| 怪物模型+动画（待填写） | 敌人 | `Assets/ThirdParty/Monsters/` | 待填写 |
+| 场景/地图（待填写） | 竞技场场景 | `Assets/ThirdParty/Environment/` | 待填写 |
+| 科幻VFX特效包（待填写） | 命中/受击/骇入特效 | `Assets/ThirdParty/VFX/` | 待填写 |
 
 ---
 
@@ -60,3 +61,20 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 |------|------|
 | 无第三方NuGet包 | 纯C#标准库，保持零外部依赖 |
 | NUnit（可选） | 单元测试，按需添加 |
+
+---
+
+## QFramework 实测兼容性记录
+
+| 项目 | 结果 |
+|------|------|
+| 验证日期 | 2026-05-25 |
+| Unity 版本 | 2022.3.62f1 LTS |
+| QFramework 版本 | 1.0.187-Unity2018Compatible |
+| 编译错误 | ✅ 零红色错误 |
+| QFramework 菜单 | ✅ 正常出现 |
+| `using QFramework;` 编译 | ✅ 通过 |
+| `GameApp : Architecture<GameApp>` 初始化 | ✅ Play Mode 正常运行 |
+| Command → System → Event 链路 | ✅ 全链路验证通过 |
+| API Updater | 无弹窗；ResKit 有3条 CS0618 警告（UnityWebRequest.isNetworkError 废弃 API），不影响框架可用性 |
+| **总结** | **完全可用**，可按 ARCHITECTURE.md 规划开始 Phase 1/2 开发 |

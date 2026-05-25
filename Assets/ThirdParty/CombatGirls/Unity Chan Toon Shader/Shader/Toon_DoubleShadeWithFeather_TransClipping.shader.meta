@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e8e7d781c3155254b9ea8956c5bd1218
+timeCreated: 1483233167
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Toon_DoubleShadeWithFeather_TransClipping.shader
+  uploadId: 729879

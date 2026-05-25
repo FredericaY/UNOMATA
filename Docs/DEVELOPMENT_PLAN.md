@@ -41,11 +41,11 @@ Phase 6  打磨与验证（A+B）
 - [ ] 搭建 `CardChainCore` 控制台项目（.NET 8，用于开发验收）
 
 ### B（队友）
-- [ ] Unity Hub 新建 2022.3 LTS + URP 项目，放入现有仓库 `Assets/` 目录
-- [ ] Package Manager 安装 QFramework
-- [ ] 导入 Starter Assets Third Person Controller
-- [ ] **验证 CombatGirls 动画能否 Retarget 到 Starter Assets 骨骼**（最高优先级，早发现早换方案）
-- [ ] 提交初始 Unity 工程
+- [x] Unity Hub 新建 2022.3 LTS + URP 项目，放入现有仓库 `Assets/` 目录
+- [x] Package Manager 安装 QFramework（已验证在 Unity 2022.3 LTS 下完全可用）
+- [x] 导入 Starter Assets Third Person Controller（已导入至 Assets/ThirdParty/StarterAssets/）
+- [x] **验证 CombatGirls 动画能否 Retarget 到 Starter Assets 骨骼**：结论 **方案B**，两者均 Humanoid Rig，Mecanim 自动重定向；需在 Phase 2 添加上半身动画层
+- [x] 提交初始 Unity 工程
 
 ---
 
@@ -88,13 +88,20 @@ Phase 6  打磨与验证（A+B）
 **可与 Phase 1 完全并行**
 
 ### 任务清单
-- [ ] 人物控制器（基于 Starter Assets，替换 CombatGirls 模型）
+- [ ] 人物控制器（基于 Starter Assets PlayerArmature，**方案B 补丁**：见下方详细说明）
 - [ ] 相机系统（普通跟随 + 瞄准状态切换，Cinemachine）
 - [ ] 射击系统（Raycast 命中检测 + 命中特效占位）
 - [ ] 敌人基础（血量 + 伤害减免属性 + 简单 AI 状态机）
 - [ ] 波次管理器（生成敌人 + 监听全灭 + 推进波次）
 - [ ] 骇入触发检测（Raycast 检测有效目标，暂时只打 Log）
-- [ ] QFramework Architecture 搭建（GameApp 入口）
+- [ ] QFramework Architecture 搭建（GameApp 入口，skeleton 已在 Assets/_Project/Scripts/Gameplay/GameApp.cs）
+
+### 方案 B 补丁清单（角色模型对接）
+> Phase 0 验证结论：CombatGirls + StarterAssets 两者均 Humanoid Rig，基础兼容，需以下改动：
+
+1. **替换视觉模型**：将 `PlayerArmature` 中 `Geometry/Armature_Mesh` 替换为 `Rifle_Full_Body.FBX`，并在 Animator 组件上切换到 RifleGirl 的 Avatar
+2. **添加上半身动画层**：在 `StarterAssetsThirdPerson.controller` 中添加新 Layer，绑定 Avatar Mask（上半身），将持枪动画（`R_AimIdle`、`R_AimWalk_F` 等）映射到该层
+3. **修复双 AudioListener**：SampleScene 中删除多余的 Main Camera（或其 AudioListener），保持场景只有一个
 
 ### 注意
 - 敌人需要暴露 `float DamageReductionFactor` 属性，Phase 4 联动时写入

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 08c65988dc25d9f44b791fcc18fb543a
+timeCreated: 1518248459
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308250
+  packageName: CombatGirls_ShotgunCharacterPack
+  packageVersion: 1.0.2
+  assetPath: Assets/CombatGirlsCharacterPack/Unity Chan Toon Shader/Shader/Tess/Toon_DoubleShadeWithFeather_Tess_StencilMask.shader
+  uploadId: 729879
