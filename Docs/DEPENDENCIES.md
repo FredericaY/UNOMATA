@@ -57,10 +57,23 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 
 ## CardChainCore（独立.NET项目）
 
+Core 层采用**独立 .NET 8 控制台工程**方案：开发期在 `CardChainCore/` 内迭代，Phase 4 时一次性将 `src/Unomata.Core/*.cs` 复制到 `Assets/_Project/Scripts/Core/` 并配 `Unomata.Core.asmdef`（`noEngineReferences=true`）。`tests/` 与 `console/` 不迁入 Unity。
+
+### 运行时依赖
+
 | 依赖 | 说明 |
 |------|------|
-| 无第三方NuGet包 | 纯C#标准库，保持零外部依赖 |
-| NUnit（可选） | 单元测试，按需添加 |
+| 无第三方 NuGet 包 | 运行时保持零外部依赖，纯 C# 标准库 |
+
+### 开发期依赖（仅 tests/console 工程）
+
+| 依赖 | 说明 |
+|------|------|
+| xUnit | 单元测试框架 |
+| xunit.runner.visualstudio | IDE / `dotnet test` 运行器 |
+| Microsoft.NET.Test.Sdk | .NET 测试 SDK |
+
+> 不引入 FluentAssertions、Moq 等额外测试库：Core 为纯逻辑无外部依赖，xUnit 原生断言已足够。
 
 ---
 

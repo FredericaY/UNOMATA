@@ -106,9 +106,15 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
 # CardChainCore standalone .NET project build artifacts
-/CardChainCore/*/bin/
-/CardChainCore/*/obj/
-/CardChainCore/*.sln
+/CardChainCore/**/bin/
+/CardChainCore/**/obj/
+
+# CardChainCore: re-include solution and project files that were excluded by
+# the global *.sln / *.csproj rules above (those rules target Unity-generated
+# files at the repo root). The CardChainCore tree is a hand-authored .NET
+# solution and MUST be tracked.
+!/CardChainCore/CardChainCore.sln
+!/CardChainCore/**/*.csproj
 
 # OS
 .DS_Store

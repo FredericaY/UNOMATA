@@ -38,7 +38,14 @@ Phase 6  打磨与验证（A+B）
 - [x] Agent Rules
 - [x] GAME_DESIGN.md
 - [x] INTERFACE.md
-- [ ] 搭建 `CardChainCore` 控制台项目（.NET 8，用于开发验收）
+- [ ] 搭建 `CardChainCore` 控制台项目（.NET 8 独立工程，Phase 4 时复制源码迁入 Unity）
+  - [ ] 在 `CardChainCore/` 下建 `CardChainCore.sln`
+  - [ ] 建 `src/Unomata.Core/Unomata.Core.csproj`（`net8.0`，`<Nullable>enable</Nullable>`，零第三方依赖）
+  - [ ] 建 `tests/Unomata.Core.Tests/Unomata.Core.Tests.csproj`（xUnit + xunit.runner.visualstudio + Microsoft.NET.Test.Sdk，引用 `Unomata.Core`）
+  - [ ] 建 `console/Unomata.Core.Console/Unomata.Core.Console.csproj`（`net8.0`，引用 `Unomata.Core`，`Program.cs` 占位 `Hello`）
+  - [ ] `dotnet build` 三个项目均成功
+  - [ ] `dotnet test` 跑通空测试套件（0 passed / 0 failed）
+  - [ ] `dotnet run --project console/Unomata.Core.Console` 输出占位文本
 
 ### B（队友）
 - [x] Unity Hub 新建 2022.3 LTS + URP 项目，放入现有仓库 `Assets/` 目录
@@ -134,6 +141,10 @@ Phase 6  打磨与验证（A+B）
 
 ### 任务清单
 - [ ] A：将 Core 源码复制到 `Assets/_Project/Scripts/Core/`
+  - [ ] 复制 `CardChainCore/src/Unomata.Core/*.cs`（仅 .cs，不含 .csproj）至 `Assets/_Project/Scripts/Core/`
+  - [ ] 在该目录建 `Unomata.Core.asmdef`，`noEngineReferences=true`、`autoReferenced=true`
+  - [ ] Unity 编译通过，Console 零红色错误
+  - [ ] `tests/` 与 `console/` 保留在 `CardChainCore/`，不迁入 Unity
 - [ ] B：`HackTrigger` 组件接入 `HackSession`（创建、驱动、订阅事件）
 - [ ] B：`Linking` 层——将 `OnSessionEnd` 的 `DamageReductionFactor` 写入目标敌人
 - [ ] B：`OnChainFailed` → 扣玩家血量
