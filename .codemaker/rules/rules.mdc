@@ -205,6 +205,35 @@ public class XxxController : MonoBehaviour, IController
 
 ---
 
+## OpenSpec 归档纪律
+
+归档一个 change 时 (`/opsx:archive` 或手动 mv 至 `openspec/changes/archive/<date>-<name>/`)，**必须**在归档前完成两条同步：
+
+1. **delta specs → 主 specs**：把 `openspec/changes/<name>/specs/<cap>/spec.md` 的 ADDED/MODIFIED/REMOVED 内容应用到 `openspec/specs/<cap>/spec.md`（去掉 delta 操作头 `## ADDED Requirements` 等，恢复成裸 `### Requirement:` 结构）
+
+2. **项目自带文档对齐现状**：扫描 `Docs/`、`README.md` 与其他用户可读文档，把 change 实施后产生的事实差异同步进去。包括但不限于：
+   - `Docs/DEVELOPMENT_PLAN.md`：本 change 涉及的任务勾选状态、阶段进展
+   - `Docs/ARCHITECTURE.md` / `Docs/DEPENDENCIES.md` / `Docs/INTERFACE.md`：与现实结构/依赖/契约一致
+   - `README.md`：顶层目录结构、环境要求、快速开始指引
+   - `Docs/TODO.md`：已完成任务的清理或迁移
+   - 其他被 change 影响的 `.md` 文档
+
+**自检流程**（归档前必跑）：
+
+```
+1. 列出 change 改动的代码/文件范围（git status / change 的 tasks.md / proposal "Impact" 段）
+2. 用 grep 扫所有 Docs/*.md 与 README.md 中是否还有"过时陈述"
+   关键词举例：被删除/重命名的路径、未勾选的已完成任务、版本号/技术选型旧值
+3. 把不一致项一一修正 → 再 mv 到 archive
+4. 归档动作本身只是最后一步，不是开始
+```
+
+**违规信号**：归档完成后用户发现 `Docs/` 仍写着"待完成"、README 仍指向已删目录、DEPENDENCIES 还列着已弃技术——视为归档不完整，必须立即补做对齐。
+
+未对齐就归档 = 制造文档债。后续看文档的人（包括队友、未来的自己、AI agent 自己）会被错误现状误导。
+
+---
+
 ## 禁止事项
 
 - ❌ 不修改 `Assets/ThirdParty/` 下任何文件

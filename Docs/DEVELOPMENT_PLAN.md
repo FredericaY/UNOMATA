@@ -38,14 +38,14 @@ Phase 6  打磨与验证（A+B）
 - [x] Agent Rules
 - [x] GAME_DESIGN.md
 - [x] INTERFACE.md
-- [ ] 搭建 `CardChainCore` 控制台项目（.NET 8 独立工程，Phase 4 时复制源码迁入 Unity）
-  - [ ] 在 `CardChainCore/` 下建 `CardChainCore.sln`
-  - [ ] 建 `src/Unomata.Core/Unomata.Core.csproj`（`net8.0`，`<Nullable>enable</Nullable>`，零第三方依赖）
-  - [ ] 建 `tests/Unomata.Core.Tests/Unomata.Core.Tests.csproj`（xUnit + xunit.runner.visualstudio + Microsoft.NET.Test.Sdk，引用 `Unomata.Core`）
-  - [ ] 建 `console/Unomata.Core.Console/Unomata.Core.Console.csproj`（`net8.0`，引用 `Unomata.Core`，`Program.cs` 占位 `Hello`）
-  - [ ] `dotnet build` 三个项目均成功
-  - [ ] `dotnet test` 跑通空测试套件（0 passed / 0 failed）
-  - [ ] `dotnet run --project console/Unomata.Core.Console` 输出占位文本
+- [x] 搭建 `CardChainCore` 控制台项目（.NET 8 独立工程，Phase 4 时复制源码迁入 Unity）
+  - [x] 在 `CardChainCore/` 下建 `CardChainCore.sln`
+  - [x] 建 `src/Unomata.Core/Unomata.Core.csproj`（`net8.0`，`<Nullable>enable</Nullable>`，零第三方依赖）
+  - [x] 建 `tests/Unomata.Core.Tests/Unomata.Core.Tests.csproj`（xUnit + xunit.runner.visualstudio + Microsoft.NET.Test.Sdk，引用 `Unomata.Core`）
+  - [x] 建 `console/Unomata.Core.Console/Unomata.Core.Console.csproj`（`net8.0`，引用 `Unomata.Core`，`Program.cs` 占位 `Hello`）
+  - [x] `dotnet build` 三个项目均成功
+  - [x] `dotnet test` 跑通空测试套件（0 passed / 0 failed）
+  - [x] `dotnet run --project console/Unomata.Core.Console` 输出占位文本
 
 ### B（队友）
 - [x] Unity Hub 新建 2022.3 LTS + URP 项目，放入现有仓库 `Assets/` 目录
