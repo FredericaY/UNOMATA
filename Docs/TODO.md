@@ -47,27 +47,35 @@
 
 ---
 
-## Change 2 — `cardchain-validator`
+## Change 2 — `cardchain-validator` ✅ 已实施 (2026-05-26，待归档)
 
 **职责**：纯函数层的接龙合法性判定与状态更新（`IsValidNext` / `ApplyPrev`）。
 
 ### 范围
-- [ ] `internal class SessionState`：`LastColor` / `LastNumber` / `Direction` 三字段
-- [ ] `internal static class CardChainRules`（或同等命名）：
-  - [ ] `IsValidNext(CardData next, SessionState state) → bool`
-  - [ ] `ApplyPrev(CardData prev, SessionState state)`（in-place 修改 state）
-- [ ] xUnit 覆盖：
-  - [ ] 同色任意数字合法（含异色升降序边界）
-  - [ ] 异色升序：N' > lastNumber 合法，反之非法
-  - [ ] 异色降序：N' < lastNumber 合法，反之非法
-  - [ ] 异色同数字非法（旧规则废除验证）
-  - [ ] `lastNumber == null` 时方向约束失效（任意数字合法）
-  - [ ] 王牌作为 next 永远合法（任何 state）
-  - [ ] 反转牌：同色合法、异色非法、`lastColor == null` 时任意反转合法
-  - [ ] `ApplyPrev` 数字牌：更新 lastColor/lastNumber，不切方向
-  - [ ] `ApplyPrev` 反转牌：更新 lastColor、清 lastNumber、翻转方向
-  - [ ] `ApplyPrev` 王牌：清 lastColor 和 lastNumber，不切方向
-  - [ ] 开局起手：state=(null, null, Ascending)，任意牌合法
+- [x] `internal class SessionState`：`LastColor` / `LastNumber` / `Direction` 三字段
+- [x] `internal static class CardChainRules`（或同等命名）：
+  - [x] `IsValidNext(CardData next, SessionState state) → bool`
+  - [x] `ApplyPrev(CardData prev, SessionState state)`（in-place 修改 state）
+- [x] xUnit 覆盖：
+  - [x] `lastColor == null` 时任意数字合法（开局 / 王牌后等价 Wild 后状态）
+  - [x] 同色任意数字合法（含异色边界覆盖）
+  - [x] 异色升序：`N' == lastNumber + 1` 才合法（严格 ±1）
+  - [x] 异色降序：`N' == lastNumber - 1` 才合法（严格 ±1）
+  - [x] 异色同数字非法（旧规则废除验证）
+  - [x] 反转牌后 `lastColor != null + lastNumber == null` 时异色数字全部非法
+  - [x] 边界 `(C, 9, Asc)` / `(C, 0, Desc)` 异色无解（N'==10 / N'==-1 不存在）
+  - [x] 王牌作为 next 永远合法（任何 state）
+  - [x] 反转牌：同色合法、异色非法、`lastColor == null` 时任意反转合法
+  - [x] **连续两张同色 Reverse 合法**（每色 2 张 Reverse 设计）
+  - [x] `ApplyPrev` 数字牌：更新 lastColor/lastNumber，不切方向
+  - [x] `ApplyPrev` 反转牌：更新 lastColor、清 lastNumber、翻转方向
+  - [x] `ApplyPrev` 王牌：清 lastColor 和 lastNumber，不切方向
+  - [x] 开局起手：state=(null, null, Ascending)，任意牌合法
+  - [x] GAME_DESIGN 3.5.3 完整序列重放（覆盖开局/同色覆盖/严格±1试探/反转后异色非法/王牌后重置/连续两张同色Reverse）
+
+### 验收数据
+- `dotnet build CardChainCore.sln` → 0 警告、0 错误
+- `dotnet test CardChainCore.sln` → 109 通过、0 失败、0 跳过（含 Change 1 的 17 个 + Change 2 新增 92 个）
 
 ### 依赖
 Change 1（CardData/枚举）
@@ -76,29 +84,33 @@ Change 1（CardData/枚举）
 
 ## Change 3 — `cardchain-deck-generator`
 
-**职责**：选项生成器（按 `INTERFACE.md` 第五节"发牌算法"）+ 难度参数 config。
+**职责**：选项生成器（按 `INTERFACE.md` 第五节"发牌算法"Option F 版）+ 难度参数 config。
 
 ### 范围
 - [ ] `class HackDifficultyConfig`：`OptionCount` / `TargetChainCount` / `TotalTime` / `SolvableRate` / `WildAppearRate` 五字段
 - [ ] `internal class OptionGenerator`（或同等命名）：
   - [ ] `Generate(state, config, random) → (CardData[] options, bool isDeadlock)`
-  - [ ] `SolvableRate` 决定是否抽 1 张合法牌
+  - [ ] deck 构成：40 Number + 8 Reverse = 48 张逻辑牌池，**王牌不进 deck**
+  - [ ] `SolvableRate` 决定是否抽 1 张合法牌（下界语义）
   - [ ] `WildAppearRate` 独立判定塞王牌
   - [ ] 剩余位填非法牌
+  - [ ] **合法位扩展守卫**：非法池规模 < 所需非法位数时，缺口转为合法位
   - [ ] 选项内不重复（同轮）
   - [ ] `Empty` 永不出现在选项中
-  - [ ] 反转牌不强塞，仅作为合法牌候选自然出现
-- [ ] 抽样池：50 张牌的逻辑代表（不必实例化 50 个对象，按 Type/Color/Number 笛卡尔积选取）
+  - [ ] 反转牌不强塞，仅作为合法/非法牌候选自然出现
+- [ ] 抽样池：48 张牌的逻辑代表（不必实例化对象，按 Type/Color/Number 笛卡尔积选取）
 - [ ] 注入式随机源（`Random` / 可 mock 接口）便于测试
 - [ ] xUnit 覆盖：
   - [ ] 选项数量始终 = `OptionCount`
   - [ ] 选项内不重复
   - [ ] `Empty` 不出现
   - [ ] `SolvableRate=1, WildAppearRate=0` 时永远有合法牌且无王牌
-  - [ ] `SolvableRate=0, WildAppearRate=0` 时永远无合法牌（isDeadlock=true）
+  - [ ] `SolvableRate=0, WildAppearRate=0` 时一般 state 永远无合法牌（isDeadlock=true）
+  - [ ] **`(null, null, *)` 状态恒 isDeadlock=false**（合法位扩展守卫触发）
+  - [ ] **`(C, null, *)` 状态 OptionCount=5 时部分位用合法池补**（守卫触发但不一定全替换）
   - [ ] `WildAppearRate=1` 时永远塞 1 张王牌
-  - [ ] 王牌不算入合法牌池（用 mock 验证 `pick_random_legal` 不返回 Wild）
-  - [ ] 大样本统计：固定 seed 跑 N 次，验证概率收敛于配置值
+  - [ ] 王牌不算入合法/非法牌池（用 mock 验证 deck 抽样不返回 Wild）
+  - [ ] 大样本统计：固定 seed 跑 N 次，验证概率收敛于配置值（一般 state 下）
 
 ### 依赖
 Change 1（CardData）+ Change 2（IsValidNext 用于"合法/非法"判定）

@@ -185,11 +185,12 @@ bool IsValidNext(CardData next, SessionState s)
     if (next.Type == CardType.Reverse) return s.LastColor == null
                                            || next.Color == s.LastColor;
     // Number
+    if (s.LastColor == null)       return true;            // 开局 / 王牌后任意合法
     if (next.Color == s.LastColor) return true;            // 同色任意数字合法
-    if (s.LastNumber == null)      return true;            // 无数字基准 → 任意数字合法
+    if (s.LastNumber == null)      return false;           // 反转后异色全非法（lastColor!=null + lastNumber==null）
     return s.Direction == ChainDirection.Ascending
-        ? next.Number > s.LastNumber
-        : next.Number < s.LastNumber;
+        ? next.Number == s.LastNumber + 1                  // 严格 +1
+        : next.Number == s.LastNumber - 1;                 // 严格 -1
 }
 
 void ApplyPrev(CardData prev, SessionState s)
@@ -361,33 +362,44 @@ OnNewRound(card, options, isDeadlock):
 
 ## 五、发牌算法（Core 内部约定）
 
-每轮选项生成的伪代码：
+每轮选项生成的伪代码（**Option F：合法位扩展守卫版**）：
 
 ```
 generate_options(state, config):
-    isSolvable = roll(config.SolvableRate)      // 本轮是否有解
+    # 王牌走独立通道，不进 deck
+    deck        = 40 张 Number + 8 张 Reverse        // 共 48 张逻辑牌池
+    legalPool   = [c in deck if IsValidNext(c, state)]
+    illegalPool = [c in deck if not IsValidNext(c, state)]
+
+    isSolvable = roll(config.SolvableRate)      // 本轮是否有解（下界）
     hasWild    = roll(config.WildAppearRate)    // 本轮是否塞王牌
-    
+
     options = []
-    
     if hasWild:
-        options.append(Wild)                    // 占用 1 个选项位
-    
-    if isSolvable:
-        legalCard = pick_random_legal(state, deck)   // 抽 1 张当前 state 下合法的牌
-        options.append(legalCard)               // 有解轮固定 1 张合法牌
-    
-    // 剩余位置全部填非法牌
-    while len(options) < config.OptionCount:
-        illegalCard = pick_random_illegal(state, deck)
-        options.append(illegalCard)
-    
+        options.append(Wild)                    // Wild 占 1 个选项位
+
+    # 计算合法位 / 非法位
+    legalSlot   = isSolvable ? 1 : 0
+    illegalSlot = config.OptionCount - len(options) - legalSlot
+
+    # 守卫：非法池不足 → 缺口转为合法位
+    if illegalSlot > len(illegalPool):
+        deficit      = illegalSlot - len(illegalPool)
+        illegalSlot -= deficit
+        legalSlot   += deficit                  // 用合法池补齐
+
+    # 守卫：合法池也不够（极端罕见，例如 deck 异常小）
+    legalSlot = min(legalSlot, len(legalPool))
+
+    options += sample_without_replacement(legalPool,   legalSlot)
+    options += sample_without_replacement(illegalPool, illegalSlot)
+
     shuffle(options)
-    isDeadlock = options 中无任一 IsValidNext(opt, state) == true
+    isDeadlock = (options 中无任一 IsValidNext(opt, state) == true)
     return (options, isDeadlock)
 ```
 
-四种轮次组合：
+四种轮次组合（一般情形，非法池充裕）：
 
 | isSolvable | hasWild | 实际有解？ | isDeadlock | 选项构成（OptionCount=3 示例） |
 |------------|---------|-----------|------------|------------------------------|
@@ -396,19 +408,33 @@ generate_options(state, config):
 | false | true  | 是 | false | 1 王牌 + 2 非法 |
 | false | false | 否 | **true** | 3 非法 |
 
+**合法位扩展守卫触发情形**（非法池规模不足时）：
+
+| state 形态 | 非法池规模 | 行为 |
+|-----------|-----------|------|
+| `(null, null, *)` 开局 / Wild 后 | 0 张 | 全部位用合法池补，`isSolvable` 强制为下界，`isDeadlock = false` |
+| `(C, null, *)` 反转牌后 | 6 张异色 Reverse（每色 2 张 × 3 异色） | OptionCount=3 时刚够；OptionCount=5 时部分位用合法池补 |
+| `(C, N, *)` 一般中盘 | ~33 张 | 充足，标准算法正常运行 |
+| `(C, 9, Asc)` / `(C, 0, Desc)` 边界 | ~36 张 | 充足，标准算法正常运行 |
+
+> **isSolvable 语义为下界**：实际有解率 ≥ 配置 `SolvableRate`。
+> 在 `lastColor == null` 状态下实际有解率被强制提升到 100%。
+
 约束：
 - 选项内**不重复**（同一轮 5 张选项必须两两不同；跨轮可重）
-- 反转牌**不强塞**，只在 `pick_random_legal` 抽到时自然出现
-- 王牌**只通过 `WildAppearRate` 强塞**，不进入 `pick_random_legal/illegal` 池
+- 反转牌**不强塞**，只在合法/非法池抽样时自然出现
+- 王牌**只通过 `WildAppearRate` 强塞**，不进入 deck，也不进入 `legalPool/illegalPool`
 - `Empty` 牌仅作 `CurrentCard` 占位，**永不出现在选项中**
 
 > 概率示例（`SyncRate → SolvableRate` 假设线性 0.5~0.95 + WildAppearRate=0.05）：
 >
-> | SyncRate | SolvableRate | 实际死局率 | 含义 |
+> | SyncRate | SolvableRate | 上界死局率 | 含义 |
 > |----------|--------------|-----------|------|
 > | 1.0      | 0.95         | 5% × 95% = 4.75% | 满同步率几乎稳过 |
 > | 0.5      | 0.725        | 27.5% × 95% ≈ 26% | 中位偶尔卡死 |
 > | 0.0      | 0.50         | 50% × 95% ≈ 47.5% | 零同步率每轮约一半概率死局 |
+>
+> 表中"死局率"为**上界**估计——`(null, null, *)` 与部分 `(C, null, *)` 状态因合法位扩展，实际死局率会低于此值。
 
 ---
 

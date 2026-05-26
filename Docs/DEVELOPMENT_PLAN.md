@@ -63,16 +63,18 @@ Phase 6  打磨与验证（A+B）
 ### 任务清单
 - [x] `CardData` + `CardType` / `CardColor` / `ChainDirection` 枚举：纯数据，含 `CardData.Empty` 静态实例 *(Change 1 cardchain-types, 2026-05-26)*
 - [ ] `HackDifficultyConfig`：难度参数数据类（OptionCount / TargetChainCount / TotalTime / SolvableRate / WildAppearRate）
-- [ ] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现）：
-  - [ ] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率）
+- [ ] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现 Option F 合法位扩展守卫版）：
+  - [ ] deck 构成：40 Number + 8 Reverse = 48 张，**王牌不进 deck**
+  - [ ] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率，下界语义）
   - [ ] `WildAppearRate` 独立判定是否塞 1 张王牌
   - [ ] 剩余位填非法牌；选项内不重复，跨轮可重
-  - [ ] 反转牌仅作为合法牌候选自然出现，不强塞
+  - [ ] **合法位扩展守卫**：`(null,null,*)` 状态非法池为空、`(C,null,*)` 状态非法池可能不足，缺口转为合法位补齐
+  - [ ] 反转牌仅作为合法/非法牌候选自然出现，不强塞
   - [ ] `Empty` 永不出现在选项中
-  - [ ] 计算并返回 `isDeadlock` 标志（选项中无任一合法牌）
+  - [ ] 计算并返回 `isDeadlock` 标志（选项中无任一合法牌；`lastColor==null` 状态恒 false）
 - [ ] `HackSession` 内部状态机：
   - [ ] `SessionState`：lastColor / lastNumber / direction
-  - [ ] `IsValidNext()` 严格升降序判定（同色 OR 方向匹配）
+  - [ ] `IsValidNext()` 严格 ±1 升降序判定（lastColor==null 任意 ∨ 同色任意 ∨ 异色严格 ±1；反转后 lastColor!=null+lastNumber==null 异色全非法）
   - [ ] `ApplyPrev()` 数字/反转/王牌的状态更新与方向翻转
   - [ ] 反转牌 +1 maxPot、王牌 +4 maxPot（满档前生效，满档后冻结）
   - [ ] 满档单向 latch：`chain >= maxPot` 首次成立后冻结
@@ -87,7 +89,7 @@ Phase 6  打磨与验证（A+B）
 - [ ] `HackResult`：`DamageReductionFactor = chain / basePot`，无上限 clamp
 - [x] `EndReason`：`TimeUp / WrongCard / Surrender` *(Change 1 cardchain-types, 2026-05-26)*
 - [x] `ComboType` 枚举（预留：None / SameColorTwice / SameDirectionTwice，不实现逻辑） *(Change 1 cardchain-types, 2026-05-26)*
-- [ ] xUnit 测试覆盖关键判定：升降序边界、反转切方向、王牌穿透、满档 latch、溢出计数、死局判定、Surrender 状态机
+- [ ] xUnit 测试覆盖关键判定：严格 ±1 升降序边界、反转后异色全非法、连续两张同色 Reverse 合法、王牌穿透、合法位扩展守卫、满档 latch、溢出计数、死局判定、Surrender 状态机
 - [ ] 控制台测试程序：模拟完整骇入流程输出日志（含死局响应）
 
 ### 验收方式

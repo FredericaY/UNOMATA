@@ -113,12 +113,9 @@
 
 ### Requirement: 类型层零运行时依赖与零业务逻辑
 
-`CardChain/` 子目录下本 change 引入的所有源文件 SHALL NOT 包含任何业务逻辑（不实现接龙合法性、状态更新、计时、结算）。`Unomata.Core.csproj` SHALL 保持零 `PackageReference`、零 `ProjectReference`、不引用 `UnityEngine`。
+`cardchain-types` capability 引入的类型源文件（`CardData.cs` / `CardType.cs` / `CardColor.cs` / `ChainDirection.cs` / `EndReason.cs` / `ComboType.cs`）SHALL NOT 包含任何业务逻辑（不实现接龙合法性、状态更新、计时、结算）。`Unomata.Core.csproj` SHALL 保持零 `PackageReference`、零 `ProjectReference`、不引用 `UnityEngine`。
 
-#### Scenario: 源文件无业务方法
-
-- **WHEN** 在 `CardChainCore/src/Unomata.Core/CardChain/` 下递归搜索方法体非空的成员（构造函数与字段初始化器除外）
-- **THEN** 结果 SHALL 为空（仅枚举定义、字段声明、`CardData.Empty` 静态初始化器）
+后续 change（如 `cardchain-validator`）可以在 `CardChainCore/src/Unomata.Core/CardChain/` 子目录下新增含业务逻辑的源文件，本 Requirement 不约束这些后续文件。
 
 #### Scenario: Core 项目仍无第三方依赖
 
