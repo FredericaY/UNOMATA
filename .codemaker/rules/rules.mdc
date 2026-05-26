@@ -92,8 +92,8 @@ public class XxxController : MonoBehaviour, IController
   - 时间通过外部传入 `deltaTime`，不读 `Time.deltaTime`
   - 日志用 `System.Console` 或事件回调，不用 `Debug.Log`
 - Core 与 Unity 端**只能**通过 `Docs/INTERFACE.md` 约定的公开类/事件交互：
-  - 公开类：`HackSession` / `HackDifficultyConfig` / `CardData` / `HackResult` / `ComboType`
-  - Unity 端持有 `HackSession`，订阅 7 个事件（`OnNewRound` / `OnChainSuccess` / `OnChainFailed` / `OnTimeUp` / `OnMaxReached` / `OnOverflow` / `OnSessionEnd`），每帧 `Tick(deltaTime)`，调 `SelectOption(index)`
+  - 公开类：`HackSession` / `HackDifficultyConfig` / `CardData` / `HackResult` / `ComboType` / `ChainDirection`
+  - Unity 端持有 `HackSession`，订阅 8 个事件（`OnNewRound` / `OnChainSuccess` / `OnChainFailed` / `OnTimeUp` / `OnMaxReached` / `OnOverflow` / `OnDirectionChanged` / `OnSessionEnd`），每帧 `Tick(deltaTime)`，调 `SelectOption(index)` / `Surrender()`
 - **接龙规则、计时、Combo 检测全部写在 Core 层**，Unity 端不实现任何接龙规则
 - 接口签名变更前必须更新 `Docs/INTERFACE.md`，再改实现
 
@@ -164,7 +164,7 @@ public class XxxController : MonoBehaviour, IController
 | `GameApp` | `Assets/_Project/Scripts/Gameplay/GameApp.cs` | QFramework Architecture 入口 |
 | `HackSession` | `Unomata.Core`（待实现） | 单次骇入会话生命周期，见 `INTERFACE.md` |
 | `HackDifficultyConfig` | `Unomata.Core` | 难度参数，由 Unity 端按波次生成 |
-| `CardData` / `CardColor` | `Unomata.Core` | 牌数据 + `CanFollow(other)` |
+| `CardData` / `CardColor` / `CardType` / `ChainDirection` | `Unomata.Core` | 牌数据；合法性判定在 `HackSession` 内 |
 | `HackResult` / `EndReason` | `Unomata.Core` | 结算，含 `DamageReductionFactor` |
 | `ComboType` | `Unomata.Core`（v1 仅 `None`） | 预留 Combo 枚举 |
 | `QFrameworkValidator` | `Assets/_Project/Scripts/Gameplay/Tests/QFrameworkValidator.cs` | QFramework 链路验证示例 |
@@ -179,16 +179,16 @@ public class XxxController : MonoBehaviour, IController
 [骇入键按下]
   Controller.SendCommand<StartHackCommand>
     → HackSystem 用 HackDifficultyConfig 创建 HackSession
-    → session.Start() → 订阅 7 个事件
+    → session.Start() → 订阅 8 个事件
 [每帧]
   HackSystem.Tick(Time.deltaTime) → session.Tick(dt)
 [选牌]
   Controller.SendCommand<SelectCardCommand(index)>
     → HackSystem.CurrentSession.SelectOption(index)
 [Core 事件回流]
-  OnChainFailed  → Linking 层扣血
+  OnChainFailed  → Linking 层依据 IsMaxLatched / chain<BasePot 决定是否扣血
   OnOverflow     → Linking 层充能 +1
-  OnSessionEnd   → Linking 层把 result.DamageReductionFactor 写入目标敌人
+  OnSessionEnd   → Linking 层把 result.DamageReductionFactor 写入目标敌人（factor>1 附加受击加成）
   所有事件       → UI 层刷新显示
 ```
 

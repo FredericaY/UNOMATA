@@ -40,7 +40,7 @@
 - 命名空间：`Unomata.Core`
 - 路径：开发期位于独立 .NET 8 工程 `CardChainCore/src/Unomata.Core/`；Phase 4 复制至 Unity 内 `Assets/_Project/Scripts/Core/` 并配 `Unomata.Core.asmdef`（`noEngineReferences=true`）
 - **严禁引用 `UnityEngine`**
-- 职责：接龙规则、牌组生成、计时、Combo检测（预留）、结算
+- 职责：接龙规则（严格升降序 + 反转/王牌方向状态机）、牌组生成、计时、Combo检测（预留）、结算（basePot / maxPot 双层奖励池）
 
 ### Gameplay 层（`Unomata.Gameplay`）
 - 命名空间：`Unomata.Gameplay`

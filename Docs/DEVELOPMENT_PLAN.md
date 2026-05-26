@@ -61,29 +61,48 @@ Phase 6  打磨与验证（A+B）
 **交付标准：控制台项目可完整运行一次骇入流程，所有事件正确触发**
 
 ### 任务清单
-- [ ] `CardData`：牌的数据结构 + `CanFollow()` 匹配逻辑
-- [ ] `CardDeck`：牌组生成，按 `ValidCardRatio` 控制合法牌比例
-- [ ] `HackDifficultyConfig`：难度参数数据类
+- [ ] `CardData` + `CardType` / `CardColor` / `ChainDirection` 枚举：纯数据，含 `CardData.Empty` 静态实例
+- [ ] `HackDifficultyConfig`：难度参数数据类（OptionCount / TargetChainCount / TotalTime / SolvableRate / WildAppearRate）
+- [ ] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现）：
+  - [ ] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率）
+  - [ ] `WildAppearRate` 独立判定是否塞 1 张王牌
+  - [ ] 剩余位填非法牌；选项内不重复，跨轮可重
+  - [ ] 反转牌仅作为合法牌候选自然出现，不强塞
+  - [ ] `Empty` 永不出现在选项中
+  - [ ] 计算并返回 `isDeadlock` 标志（选项中无任一合法牌）
+- [ ] `HackSession` 内部状态机：
+  - [ ] `SessionState`：lastColor / lastNumber / direction
+  - [ ] `IsValidNext()` 严格升降序判定（同色 OR 方向匹配）
+  - [ ] `ApplyPrev()` 数字/反转/王牌的状态更新与方向翻转
+  - [ ] 反转牌 +1 maxPot、王牌 +4 maxPot（满档前生效，满档后冻结）
+  - [ ] 满档单向 latch：`chain >= maxPot` 首次成立后冻结
+  - [ ] 溢出计数：满档后每多接一张合法牌 +1
 - [ ] `HackSession`：完整会话逻辑
   - [ ] 计时（`Tick` 驱动）
-  - [ ] 选牌验证
-  - [ ] 接龙计数 + 满档检测
-  - [ ] 溢出计数
-  - [ ] 所有事件触发
-  - [ ] `HackResult` 生成
-- [ ] `HackResult`：结算数据类 + `DamageReductionFactor` 计算
-- [ ] `ComboType` 枚举（预留，不实现逻辑）
-- [ ] 控制台测试程序：模拟完整骇入流程输出日志
+  - [ ] 选牌验证（基于 `IsValidNext`）
+  - [ ] `Surrender()` API：玩家主动弃牌或 Unity 端死局窗口超时调用
+  - [ ] 事件触发：OnNewRound（含 isDeadlock 参数）/ OnChainSuccess / OnChainFailed / OnTimeUp / OnMaxReached / OnOverflow / OnDirectionChanged / OnSessionEnd
+  - [ ] CurrentCard 初始为 `CardData.Empty`，开局任意牌合法
+  - [ ] `HackResult` 生成（含 BasePot / MaxPot / IsMaxReached / Reason）
+- [ ] `HackResult`：`DamageReductionFactor = chain / basePot`，无上限 clamp
+- [ ] `EndReason`：`TimeUp / WrongCard / Surrender`
+- [ ] `ComboType` 枚举（预留：None / SameColorTwice / SameDirectionTwice，不实现逻辑）
+- [ ] xUnit 测试覆盖关键判定：升降序边界、反转切方向、王牌穿透、满档 latch、溢出计数、死局判定、Surrender 状态机
+- [ ] 控制台测试程序：模拟完整骇入流程输出日志（含死局响应）
 
 ### 验收方式
 控制台输出示例：
 ```
-[HackSession] Start | Target=8 Time=12.0s Options=3
-[Round 1] Current: Red-5 | Options: Red-3 / Blue-5 / Green-7
-[Input] Select index 1 (Blue-5) → Match: SameNumber ✓ Chain=1
-[Round 2] Current: Blue-5 | Options: ...
-...
-[SessionEnd] Chain=8/8 Overflow=2 Factor=1.0 Reason=TimeUp
+[HackSession] Start | basePot=8 Time=12.0s Options=3 Direction=Asc SolvableRate=0.7 WildRate=0.05
+[Round 1] Current: Empty                  | Options: Red-5 / Yellow-Rev / Blue-3   | Deadlock=false
+[Input] Select 0 (Red-5) → ✓ chain=1 maxPot=8
+[Round 2] Current: Red-5 (Asc)            | Options: Red-Rev / Yellow-2 / Blue-9   | Deadlock=false
+[Input] Select 0 (Red-Rev) → ✓ chain=2 maxPot=9 Direction=Desc
+[Round 3] Current: Red-Rev (Desc)         | Options: Yellow-7 / Green-8 / Wild     | Deadlock=false
+[Input] Select 2 (Wild) → ✓ chain=3 maxPot=13
+[Round 4] Current: Wild                   | Options: Blue-9 / Green-2 / Yellow-5   | Deadlock=true
+[FakePlayer] 立即 Surrender (死局突破)
+[OnSessionEnd] chain=3 basePot=8 maxPot=13 factor=0.375 reason=Surrender
 ```
 
 ---
@@ -146,10 +165,14 @@ Phase 6  打磨与验证（A+B）
   - [ ] Unity 编译通过，Console 零红色错误
   - [ ] `tests/` 与 `console/` 保留在 `CardChainCore/`，不迁入 Unity
 - [ ] B：`HackTrigger` 组件接入 `HackSession`（创建、驱动、订阅事件）
-- [ ] B：`Linking` 层——将 `OnSessionEnd` 的 `DamageReductionFactor` 写入目标敌人
-- [ ] B：`OnChainFailed` → 扣玩家血量
+- [ ] B：`SyncRateModel` + `SyncRateSystem`（QFramework 分层），处理拾取/受伤/击杀对 SyncRate 的影响
+- [ ] B：触发骇入时按 `SolvableRate = 0.5 + 0.45 × SyncRate` 生成 config
+- [ ] B：弃牌键复用骇入键（含 0.2~0.3 秒防误触冷却）；任意时刻按下 → `session.Surrender()`
+- [ ] B：死局反应窗口实现——监听 `OnNewRound(..., isDeadlock=true)` 启动倒计时；窗口内主动弃牌 → SyncRate 奖励；超时 Unity 主动 `Surrender()` 不奖励
+- [ ] B：`Linking` 层——将 `OnSessionEnd` 的 `DamageReductionFactor` 写入目标敌人（factor > 1 时附加额外受击加成）
+- [ ] B：`OnChainFailed` → Phase 1 占位扣固定血量；Phase 5 平衡按 `GAME_DESIGN.md` 3.7.2 候选方案敲定
 - [ ] B：`OnOverflow` → 生命回复技能充能+1
-- [ ] A+B：联调，验证所有事件通路正确
+- [ ] A+B：联调，验证所有事件通路正确（含死局突破奖励链路）
 
 ---
 
@@ -159,10 +182,15 @@ Phase 6  打磨与验证（A+B）
 
 ### 任务清单
 - [ ] 确定骇入效果持续时间数值
-- [ ] 确定接错牌扣血量
+- [ ] 敲定 `OnChainFailed` 惩罚机制（`GAME_DESIGN.md` 3.7.2 三个候选版本之一）
 - [ ] 确定满档额外伤害加成数值
 - [ ] 确定生命回复技能缓存上限
-- [ ] 波次→难度参数的映射曲线调整
+- [ ] 确定 SyncRate 增量数值（道具拾取 / 击杀掉落 / 死局突破）
+- [ ] 确定 SyncRate 受伤下降比例（方式 c：按伤害量 / 玩家最大血量）
+- [ ] 确定死局反应窗口时长（`DEADLOCK_WINDOW_SEC`）
+- [ ] 确定 `WildAppearRate` 数值
+- [ ] 确定 `SyncRate → SolvableRate` 映射公式（暂定 `0.5 + 0.45 × x` 是否需调整）
+- [ ] 波次 → 难度参数的映射曲线调整（OptionCount / TotalTime / TargetChainCount）
 - [ ] 多轮游玩测试，收集体感反馈
 
 ---
