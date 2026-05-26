@@ -61,7 +61,7 @@ Phase 6  打磨与验证（A+B）
 **交付标准：控制台项目可完整运行一次骇入流程，所有事件正确触发**
 
 ### 任务清单
-- [ ] `CardData` + `CardType` / `CardColor` / `ChainDirection` 枚举：纯数据，含 `CardData.Empty` 静态实例
+- [x] `CardData` + `CardType` / `CardColor` / `ChainDirection` 枚举：纯数据，含 `CardData.Empty` 静态实例 *(Change 1 cardchain-types, 2026-05-26)*
 - [ ] `HackDifficultyConfig`：难度参数数据类（OptionCount / TargetChainCount / TotalTime / SolvableRate / WildAppearRate）
 - [ ] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现）：
   - [ ] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率）
@@ -85,8 +85,8 @@ Phase 6  打磨与验证（A+B）
   - [ ] CurrentCard 初始为 `CardData.Empty`，开局任意牌合法
   - [ ] `HackResult` 生成（含 BasePot / MaxPot / IsMaxReached / Reason）
 - [ ] `HackResult`：`DamageReductionFactor = chain / basePot`，无上限 clamp
-- [ ] `EndReason`：`TimeUp / WrongCard / Surrender`
-- [ ] `ComboType` 枚举（预留：None / SameColorTwice / SameDirectionTwice，不实现逻辑）
+- [x] `EndReason`：`TimeUp / WrongCard / Surrender` *(Change 1 cardchain-types, 2026-05-26)*
+- [x] `ComboType` 枚举（预留：None / SameColorTwice / SameDirectionTwice，不实现逻辑） *(Change 1 cardchain-types, 2026-05-26)*
 - [ ] xUnit 测试覆盖关键判定：升降序边界、反转切方向、王牌穿透、满档 latch、溢出计数、死局判定、Surrender 状态机
 - [ ] 控制台测试程序：模拟完整骇入流程输出日志（含死局响应）
 

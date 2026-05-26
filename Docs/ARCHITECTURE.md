@@ -102,23 +102,42 @@ GameApp（Architecture入口）
 
 ## 文件结构速查
 
+### 当前 (Phase 1, Core 在独立 .NET 工程)
+
+```
+CardChainCore/
+├── src/Unomata.Core/
+│   └── CardChain/
+│       ├── CardType.cs           // enum (Change 1)
+│       ├── CardColor.cs          // enum (Change 1)
+│       ├── ChainDirection.cs     // enum (Change 1)
+│       ├── EndReason.cs          // enum (Change 1)
+│       ├── ComboType.cs          // enum 占位 (Change 1)
+│       └── CardData.cs           // class + Empty 单例 (Change 1)
+│       // 后续 Change 2~6 在此追加: HackDifficultyConfig / HackSession / HackResult 等
+├── tests/Unomata.Core.Tests/
+│   └── CardChain/                // 镜像源码结构
+└── console/Unomata.Core.Console/
+    └── Program.cs                // Phase 1 末期由 Change 7 填充演示
+```
+
+### 目标 (Phase 4 迁入 Unity 后)
+
 ```
 Assets/_Project/Scripts/
-├── Core/
-│   ├── CardChain/
-│   │   ├── CardData.cs
-│   │   ├── CardDeck.cs
-│   │   ├── HackSession.cs
-│   │   ├── HackResult.cs
-│   │   └── HackDifficultyConfig.cs
-│   └── Interfaces/
-│       └── ComboType.cs
+├── Core/                          // 由 CardChainCore/src/Unomata.Core/ 复制迁入
+│   └── CardChain/
+│       ├── CardType.cs / CardColor.cs / ChainDirection.cs / EndReason.cs / ComboType.cs
+│       ├── CardData.cs
+│       ├── HackDifficultyConfig.cs
+│       ├── HackSession.cs
+│       └── HackResult.cs
 ├── Gameplay/
 │   ├── Player/
 │   ├── Enemy/
 │   ├── Wave/
 │   └── Linking/
-│       └── HackSessionLinker.cs   // Core事件→Unity行为
+│       └── HackSessionLinker.cs   // Core 事件 → Unity 行为
 └── UI/
     └── HackPanelController.cs
 ```

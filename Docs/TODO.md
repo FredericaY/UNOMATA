@@ -23,22 +23,27 @@
 
 ---
 
-## Change 1 — `cardchain-types`
+## Change 1 — `cardchain-types` ✅ 已归档 (2026-05-26)
 
 **职责**：所有 Core 层数据类型与枚举的纯定义，不含逻辑。
+**归档位置**：`openspec/changes/archive/2026-05-26-cardchain-types/`
+**主 spec**：`openspec/specs/cardchain-types/spec.md`
 
 ### 范围
-- [ ] `enum CardType { Number, Reverse, Wild, Empty }`
-- [ ] `enum CardColor { Red, Blue, Green, Yellow }`
-- [ ] `enum ChainDirection { Ascending, Descending }`
-- [ ] `enum EndReason { TimeUp, WrongCard, Surrender }`
-- [ ] `enum ComboType { None, SameColorTwice, SameDirectionTwice }`（预留，无逻辑）
-- [ ] `class CardData`：`Type` / `Color?` / `Number?` 三字段 + `static readonly CardData Empty`
-- [ ] xUnit：枚举值齐全、`CardData.Empty.Type == Empty`、不同 Type 的 nullable 字段约定
+- [x] `enum CardType { Number, Reverse, Wild, Empty }`
+- [x] `enum CardColor { Red, Blue, Green, Yellow }`
+- [x] `enum ChainDirection { Ascending, Descending }`
+- [x] `enum EndReason { TimeUp, WrongCard, Surrender }`
+- [x] `enum ComboType { None, SameColorTwice, SameDirectionTwice }`（预留，无逻辑）
+- [x] `class CardData`：`Type` / `Color?` / `Number?` 三字段 + `static readonly CardData Empty`
+- [x] xUnit：枚举值齐全、`CardData.Empty.Type == Empty`、不同 Type 的 nullable 字段约定（17 个测试用例全部通过）
 
-### 不含
-- 任何方法逻辑（`CanFollow` 等已废弃，不写）
-- 任何会话状态
+### 验收数据
+- `dotnet build` → 0 警告、0 错误
+- `dotnet test` → 17 通过、0 失败、0 跳过
+- `dotnet run` → 占位文本正常输出
+- `grep UnityEngine` → 0 匹配
+- csproj 依赖 → 仍为零
 
 ---
 
