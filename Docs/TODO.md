@@ -237,8 +237,8 @@ Change 6（HackSession 已完整）
 ## 整体推进节奏
 
 ```
-本周聚焦: Change 1 → Change 2 → Change 3
-下周聚焦: Change 4 → Change 5 → Change 6 → Change 7
+Phase 1（A端，Core层）:  Change 1 → Change 2 → Change 3 → Change 4 → Change 5 → Change 6 → Change 7
+Phase 2（B端，Unity）:   Change B0 → B1 → B2 → B3a → B3b → B3c → B4     （可与 Phase 1 并行）
 ```
 
 每个 change 流程：
@@ -252,3 +252,213 @@ Change 6（HackSession 已完整）
 ```
 
 完成后逐项把上方 `[ ]` 改为 `[x]` 并标注归档日期。
+
+---
+
+# Phase 2 — Unity TPS 基础：Change 拆分清单
+
+> 本节对应 `DEVELOPMENT_PLAN.md` Phase 2（2.0~2.4），按 B 端 Unity 开发拆分为 9 个 change。
+> QF 骨架先行（B0），后续各 change 在骨架上追加，禁止绕过 QF。
+
+## 依赖图
+
+```
+B0(QF骨架)
+  ├──→ B1a(模型换装)
+  │      └──→ B1b(动画层+相机)
+  │                └──→ B2a(射击Raycast)
+  │                          └──→ B2b(命中特效)
+  ├──→ B3a(敌人骨架)
+  │      └──→ B3b(敌人AI BT)
+  │                └──→ B3c(波次管理器)
+  └──→ B4(骧入触发)       ← 依赖 B3a（需要可检测的 Enemy）
+```
+
+---
+
+## B0 — `unity-qf-skeleton` ✅ 已归档 (2026-05-26)
+
+**职责**：完善 GameApp Architecture 骨架——注册 Phase 2 全部 System/Model，声明 Command 骨架，为后续所有 change 建立 QF 接入基础。
+**归档位置**：`openspec/changes/archive/2026-05-26-unity-qf-skeleton/`
+**主 specs**：`openspec/specs/player-system/spec.md` / `openspec/specs/wave-system-scaffold/spec.md`（新增）/ `openspec/specs/qframework-integration/spec.md`（更新）
+
+### 已确认技术决策
+| 决策项 | 结论 |
+|--------|------|
+| `PlayerModel.HP` 类型 | `BindableProperty<float>`（方便后续伤害减免计算） |
+| `WaveModel` 敌人列表 | B0 只做 `AliveCount`（`BindableProperty<int>`），等 B3c 再扩展 |
+| Commands 目录 | 统一放 `Assets/_Project/Scripts/Gameplay/Commands/` |
+
+### 新建文件
+- [x] `Player/PlayerModel.cs`：`BindableProperty<float> HP`、`BindableProperty<float> MaxHp`
+- [x] `Player/PlayerSystem.cs`：`OnInit` 取 PlayerModel 引用，`TakeDamage(float raw)` 方法（扣 HP，防止低于零）
+- [x] `Wave/WaveModel.cs`：`BindableProperty<int> WaveNumber`、`BindableProperty<int> AliveCount`
+- [x] `Wave/WaveSystem.cs`：`OnInit` 取 WaveModel 引用，`OnStartWave()` / `OnEnemyKilled()` 骨架（空实现，B3c 填充）
+- [x] `Commands/StartHackCommand.cs`（空 `OnExecute`）
+- [x] `Commands/SelectCardCommand.cs`（空 `OnExecute`）
+- [x] `Commands/HealCommand.cs`（空 `OnExecute`）
+- [x] `Commands/DamagePlayerCommand.cs`（空 `OnExecute`，B3b 填充 `PlayerSystem.TakeDamage`）
+
+### 修改文件
+- [x] `GameApp.cs`：填充 `Init()`，严格按顺序：`RegisterModel<PlayerModel>` → `RegisterModel<WaveModel>` → `RegisterSystem<PlayerSystem>` → `RegisterSystem<WaveSystem>`
+- [x] `Tests/QFrameworkValidator.cs`：扩展 Phase2 验证链路——`PlayerModel.HP` 写读、`PlayerSystem.TakeDamage` 触发 HP 变化、`WaveSystem 可 GetModel<WaveModel>()`
+
+### 验收
+- Unity Console 零红色错误 ✅
+- Play Mode 输出 `[QF验证通过] Phase2 骨架 System/Model 链路正常` ✅
+- `GameApp.cs` 注册结构符合 ARCHITECTURE.md 分层图 ✅
+
+### 依赖
+Phase 0 QF 链路验证（已归档 ✅）
+
+---
+
+## B1a — `unity-character-model-swap` ✅ 已归档 (2026-05-26)
+
+**职责**：将 StarterAssets PlayerArmature 的视觉模型替换为 CombatGirls RifleGirl，保留 MagicaCloth2 布料物理。
+**归档位置**：`openspec/changes/archive/2026-05-26-unity-character-model-swap/`
+**主 spec**：`openspec/specs/character-controller/spec.md`（新增6条 Requirement）
+
+### 关键实现细节
+- [x] `PlayerArmature/Geometry`（原 StarterAssets 视觉子对象）`SetActive(false)` 禁用保留
+- [x] `Rifle_Full_Body.prefab` 嵌入为子对象，local pos/rot = 0；内部 Animator 已禁用（防双冲突）
+- [x] `PlayerArmature` 根 `Animator` Avatar 切换为 `Humanoid_FAvatar`（来自 `Humanoid_F.fbx`，`CopyFromOther` 设置）
+- [x] 删除多余 `Main Camera`，场景只保留唯一 `MainCamera`（含 CinemachineBrain）
+- [x] Play Mode 验证通过：零红色错误、材质无紫色、MagicaCloth2 布料激活
+
+### 依赖
+B0（QF骨架）、Phase 0 资产整理（已归档 ✅）
+
+---
+
+## B1b — `unity-character-aim-layer` ⬜ 待开始（依赖 B1a）
+
+**职责**：添加上半身持枪动画层，实现瞄准模式下动画层切换 + Cinemachine 双相机 Priority 切换。
+
+### 范围
+
+**Animator Controller（复制为项目自有版本，不直接改 StarterAssets 原文件）：**
+- [ ] 新增 Layer `UpperBodyAim`：Override 模式，默认 Weight = 0，绑定上半身 Avatar Mask
+- [ ] `UpperBodyAim` 状态机：`AimIdle`（`R_AimIdle`）+ 移动 Blend Tree（`R_AimWalk_F/B/L/R`），由 `IsAiming` bool 参数控制 Weight
+- [ ] 瞄准时 Layer Weight 渐变到 1，退出瞄准渐变回 0（`Animator.SetLayerWeight`）
+
+**Cinemachine 双相机：**
+- [ ] `PlayerFollowCamera`（已有，Priority = 10）保持不变
+- [ ] 新建 `PlayerAimCamera`（VirtualCamera，默认 Priority = 0）：
+  - Body：Framing Transposer，Camera Offset X ≈ 0.5（右肩）
+  - FOV = 40（Phase 5 平衡时调整）
+- [ ] 瞄准输入（RMB / 手柄 LT）：`PlayerAimCamera.Priority = 15`；退出瞄准：`Priority = 0`
+
+**输入处理（接入 QF，使用 PlayerController 组件）：**
+- [ ] `PlayerController`（实现 `IController`）：监听 Aim 输入，`SendCommand<SetAimStateCommand>(bool)` 或通过 event 通知 PlayerSystem
+
+- [ ] Play Mode 验证：普通移动与瞄准移动上半身动画正确叠加，双相机切换平滑无抖动
+
+### 依赖
+B1a（RifleGirl 已嵌入，Humanoid Avatar 已切换）
+
+---
+
+## B2a — `unity-shooting-raycast` ⬜ 待开始（依赖 B1b）
+
+**职责**：射击输入 + Raycast 命中检测 + 调用敌人受击接口。
+
+### 范围
+- [ ] `ShootingController`（实现 `IController`）：监听射击输入（LMB / RT）
+  - 瞄准模式：连发（rate 占位常量）；非瞄准（腰射）：单发 + 散布偏移
+  - 从相机中心发射 Raycast（`Physics.Raycast`），检测 Layer `Enemy`
+  - 命中 → 获取 `IDamageable` 接口，调用 `TakeDamage(float baseDamage)` 占位
+- [ ] 定义 `IDamageable` 接口（`Assets/_Project/Scripts/Gameplay/`）：`void TakeDamage(float rawDamage)`
+- [ ] Layer 设置：在 Unity Tags & Layers 中添加 `Enemy` Layer
+
+### 依赖
+B1b（相机已建立，瞄准状态可查询）
+
+---
+
+## B2b — `unity-shooting-vfx` ⬜ 待开始（依赖 B2a）
+
+**职责**：命中特效占位（弹孔、受击粒子、死亡效果、准星扩散）。
+
+### 范围
+- [ ] 命中普通表面：DecalProjector 弹孔占位（或简单 ParticleSystem）
+- [ ] 命中敌人：受击特效占位（红色粒子闪烁）
+- [ ] 击杀：死亡临时效果占位（Dissolve / 淡出，Phase 6 替换）
+- [ ] HUD：准星动态扩散（射击后短暂扩大，`CrosshairController`，接入 QF UI 事件）
+
+### 依赖
+B2a（射击逻辑已通）
+
+---
+
+## B3a — `unity-enemy-scaffold` ⬜ 待开始（依赖 B0）
+
+**职责**：敌人 Prefab 骨架，暴露 HP + DamageReductionFactor 属性，实现受击与死亡逻辑。
+
+### 范围
+- [ ] Enemy Prefab（Capsule 占位；敌人模型选定后替换，可独立 patch change）
+  - `Collider` 设置为 Layer `Enemy`
+- [ ] `EnemyController`（实现 `IController`）：
+  - `float MaxHp` / `float CurrentHp`
+  - `float DamageReductionFactor = 0.95f`（Phase 4 联动时由 Linking 层写入）
+  - 实现 `IDamageable.TakeDamage(float raw)`：`实际伤害 = raw * (1 - DamageReductionFactor)`，扣减 CurrentHp
+  - 死亡：CurrentHp ≤ 0 → 播放死亡效果占位 → `this.SendCommand<EnemyDiedCommand>(gameObject)` → 销毁
+- [ ] `EnemyDiedCommand`（骨架，`OnExecute` 通知 WaveSystem，B3c 填充）
+
+### 依赖
+B0（QF骨架，WaveSystem 已声明）、B2a（IDamageable 接口已定义）
+
+---
+
+## B3b — `unity-enemy-ai-bt` ⬜ 待开始（依赖 B3a）
+
+**职责**：敌人 Behavior Tree AI——Idle / Detect / Chase / Attack 最小状态机。
+
+### 范围
+- [ ] 确认 BT 包方案，添加到 `Packages/manifest.json`，更新 `DEPENDENCIES.md`
+- [ ] BT 行为树：
+  - `Idle`：站立
+  - `Detect`：OverlapSphere 检测玩家（半径占位常量）
+  - `Chase`：直线追踪（无 NavMesh，Phase 6 可升级）
+  - `Attack`：近战范围内定时攻击，通过 `this.SendCommand<DamagePlayerCommand>(damage)` 对玩家造成伤害
+- [ ] `DamagePlayerCommand.OnExecute`：调用 `PlayerSystem.TakeDamage(damage)`
+
+### 依赖
+B3a（EnemyController 已有 HP/DRF 骨架）
+
+---
+
+## B3c — `unity-wave-manager` ⬜ 待开始（依赖 B3b）
+
+**职责**：波次管理器——生成敌人、监听全灭、推进波次，接入 WaveSystem/WaveModel。
+
+### 范围
+- [ ] `WaveConfig` ScriptableObject：每波敌人数量 / 种类（Prefab 引用）/ SpawnPoints
+- [ ] `WaveSystem.OnStartWave()`：按 WaveConfig 生成敌人 Prefab，WaveModel.AliveCount = 敌人数
+- [ ] `EnemyDiedCommand.OnExecute`（完善）：WaveModel.AliveCount--，归零时触发 `OnWaveClear` 事件
+- [ ] `WaveSystem` 监听 `OnWaveClear`：延迟 3 秒 → WaveModel.WaveNumber++ → 触发下一波
+- [ ] `WaveStarterController`（实现 `IController`）：挂场景，游戏开始时 `SendCommand<StartWaveCommand>()` 触发首波
+- [ ] Play Mode 验证：消灭本波所有敌人 → 延迟 → 下一波生成，Console 输出波次推进日志
+
+### 依赖
+B3b（敌人会死亡并发出 EnemyDiedCommand）
+
+---
+
+## B4 — `unity-hack-trigger` ⬜ 待开始（依赖 B3a，B0）
+
+**职责**：骧入触发检测组件——Raycast 检测有效目标，打 Log 占位，为 Phase 4 接入 HackSession 预留接口。
+
+### 范围
+- [ ] `HackTrigger`（实现 `IController`）：
+  - 监听骧入键（默认 F / 手柄 LB）
+  - 0.2~0.3 秒防误触冷却
+  - 无骧入进行中：Raycast 检测最近 Enemy（Layer `Enemy`）
+    - 命中 → `Debug.Log($"[HackTrigger] 命中 {target.name}，等待 Phase 4 接入")` + `SendCommand<StartHackCommand>(target)` 骨架调用
+    - 未命中 → 无反应
+  - 已有骧入进行中（Phase 4 后由 HackSystem 维护状态）：键入无反应
+- [ ] `StartHackCommand.OnExecute`（完善骨架）：打 Log，HackSystem 空实现接收
+- [ ] Play Mode 验证：对 Capsule 敌人按 F，Console 输出命中日志；连续快按 F 防误触有效
+
+### 依赖
+B3a（Enemy Layer 已设置，敌人 Prefab 存在）、B0（StartHackCommand 已声明）

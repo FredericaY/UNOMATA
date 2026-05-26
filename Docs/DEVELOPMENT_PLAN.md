@@ -115,25 +115,138 @@ Phase 6  打磨与验证（A+B）
 
 **可与 Phase 1 完全并行**
 
-### 任务清单
-- [ ] 人物控制器（基于 Starter Assets PlayerArmature，**方案B 补丁**：见下方详细说明）
-- [ ] 相机系统（普通跟随 + 瞄准状态切换，Cinemachine）
-- [ ] 射击系统（Raycast 命中检测 + 命中特效占位）
-- [ ] 敌人基础（血量 + 伤害减免属性 + 简单 AI 状态机）
-- [ ] 波次管理器（生成敌人 + 监听全灭 + 推进波次）
-- [ ] 骇入触发检测（Raycast 检测有效目标，暂时只打 Log）
-- [ ] QFramework Architecture 搭建（GameApp 入口，skeleton 已在 Assets/_Project/Scripts/Gameplay/GameApp.cs）
+### 架构规范（本 Phase 全局约束）
+- **QF 骨架先行**：所有业务逻辑模块开发前，先完成 Phase 2.0 QF 架构骨架注册；后续各 Phase 的 System/Model/Command 直接在骨架上追加，**禁止**绕过 QF 在 MonoBehaviour 间直接调用业务逻辑
+- 敌人模型尚未选定（在 Unity Asset Store 挑选中），Phase 2.3 先用 Capsule + 动画占位，模型到位后替换
+- 敌人 AI 采用 **Behavior Tree**（Unity 6 内置包 `com.unity.behavior` 或等效方案，选型在 Phase 2.3 敲定）
 
-### 方案 B 补丁清单（角色模型对接）
-> Phase 0 验证结论：CombatGirls + StarterAssets 两者均 Humanoid Rig，基础兼容，需以下改动：
+---
 
-1. **替换视觉模型**：将 `PlayerArmature` 中 `Geometry/Armature_Mesh` 替换为 `Rifle_Full_Body.FBX`，并在 Animator 组件上切换到 RifleGirl 的 Avatar
-2. **添加上半身动画层**：在 `StarterAssetsThirdPerson.controller` 中添加新 Layer，绑定 Avatar Mask（上半身），将持枪动画（`R_AimIdle`、`R_AimWalk_F` 等）映射到该层
-3. **修复双 AudioListener**：SampleScene 中删除多余的 Main Camera（或其 AudioListener），保持场景只有一个
+### Phase 2.0 — QF Architecture 骨架 ✅ 已完成（change: `unity-qf-skeleton`，归档 2026-05-26）
 
-### 注意
-- 敌人需要暴露 `float DamageReductionFactor` 属性，Phase 4 联动时写入
+> **已完成，可开始后续 Phase 2 子任务**
+
+- [x] 在 `GameApp.cs` 完整注册 Phase 2 所需的 Model 与 System 骨架（按 RegisterModel → RegisterSystem 顺序）：
+  - `PlayerModel`：HP / MaxHp 属性（`BindableProperty<float>`，float 便于 Phase 4 伤害减免计算）
+  - `WaveModel`：当前波次数 / 存活敌人数（`AliveCount`，B3c 扩展敌人列表）
+  - `PlayerSystem`：持有 PlayerModel，`TakeDamage(float)` 扣血（Mathf.Max 防负值）
+  - `WaveSystem`：持有 WaveModel，`OnStartWave()` / `OnEnemyKilled()` 骨架（B3c 填充）
+- [x] Command 骨架声明（只定义类，`OnExecute` 空实现）：`StartHackCommand` / `SelectCardCommand` / `HealCommand` / `DamagePlayerCommand`
+- [x] `QFrameworkValidator.cs` 更新：覆盖 Phase 2 System/Model 路径验证，Play Mode 输出 `[QF验证通过] Phase2 骨架 System/Model 链路正常`
+
+---
+
+### Phase 2.1 — 角色控制器（方案B补丁，约 2 个 changes）
+
+> **交付标准**：RifleGirl 模型在场景中正确运动，MagicaCloth2 布料物理正常，持枪上半身动画正确叠加，瞄准相机切换有效
+
+#### 技术选型决策（已确认）
+
+| 问题 | 决策 | 原因 |
+|------|------|------|
+| 换模型方式 | 嵌入 `Rifle_Full_Body.prefab` 作为子对象 | CombatGirls 有分件结构（15个部件），布料部件（Rifle_Dress / Rifle_Jacket）挂有 MagicaCloth2 组件，单替换 Mesh 会丢失布料物理 |
+| 相机方案 | 两台 Cinemachine 虚拟相机 Priority 切换 | 标准 Cinemachine 模式，参数隔离，过渡由 Brain 自动处理 |
+| 3D UI 相机 | 不新增，使用 World Space Canvas | 符合 GAME_DESIGN 设计意图（全息投影感），Main Camera 自动渲染 World Space Canvas，无需额外相机 |
+| 上半身Layer 非瞄准状态 | 权重 = 0（完全走 StarterAssets Blend Tree） | 非瞄准时不干预下半身主动画，瞄准时才叠加持枪动画 |
+
+#### C1：视觉模型嵌入 + 场景清理 ✅ 已完成（change: `unity-character-model-swap`，归档 2026-05-26）
+- [x] 在 `PlayerArmature` 根对象下将 StarterAssets 原视觉子对象（`Geometry/Armature_Mesh`）**禁用**（保留备份，不删除）
+- [x] 将 `Assets/ThirdParty/CombatGirls/RifleGirl/Prefab/Rifle_Full_Body.prefab` 作为子对象嵌入 `PlayerArmature` 根下，位置归零对齐
+- [x] 在 `PlayerArmature` 根对象的 `Animator` 组件上，将 Avatar 切换为 RifleGirl 的 Humanoid Avatar（`Humanoid_FAvatar`，来自 `Humanoid_F.fbx`）；RifleGirl 内部 Animator 已禁用防双冲突
+- [x] 删除 SampleScene 中多余的 Main Camera / AudioListener，保持场景只有一个 AudioListener
+- [x] 验证 MagicaCloth2 布料物理（Rifle_Dress、Rifle_Jacket）在 Play Mode 下正常模拟
+- [x] Play Mode 验证：角色正确显示，材质无紫色（URP Toon Shader 已转换），移动动画通过 Humanoid Retargeting 正常播放
+
+#### C2：上半身动画层 + 双相机瞄准切换（合并）
+
+**动画层（Animator Controller）：**
+- [ ] 在 `StarterAssetsThirdPerson.controller`（或复制为项目自有 Controller）中新增 Layer `UpperBodyAim`
+  - Blending：Override，默认 Weight = 0
+  - 绑定 Avatar Mask（上半身：Spine 以上全部骨骼，下半身权重=0）
+- [ ] `UpperBodyAim` Layer 状态机：`Empty` → （瞄准触发）→ `AimIdle`（对接 `R_AimIdle`）+ 移动 blend tree（`R_AimWalk_F` / `R_AimWalk_B` / `R_AimWalk_L` / `R_AimWalk_R`）
+- [ ] 瞄准输入触发时，通过 Animator 参数将 `UpperBodyAim` Layer 权重渐变到 1；退出瞄准时渐变回 0
+
+**Cinemachine 双相机：**
+- [ ] `PlayerFollowCamera`（已有，Priority = 10）：普通跟随，保持 StarterAssets 默认设置
+- [ ] 新建 `PlayerAimCamera`（VirtualCamera，Priority 默认 = 0）：
+  - Body：Framing Transposer，肩膀偏移（Camera Offset X ≈ 0.5 右肩）
+  - Aim：Composer，Center On Activate
+  - FOV = 40（普通跟随 FOV = 60，具体数值 Phase 5 平衡）
+- [ ] 瞄准输入（RMB / 手柄 LT）时：`PlayerAimCamera.Priority = 15`，`PlayerFollowCamera.Priority = 10` → Brain 自动过渡
+- [ ] 退出瞄准：`PlayerAimCamera.Priority = 0`，回到 `PlayerFollowCamera`
+- [ ] Play Mode 验证：普通移动与瞄准移动的上半身动画正确叠加，两相机切换平滑，无画面抖动
+
+> **方案 B 补丁清单回顾**（原 Phase 0 验证结论）：两者均 Humanoid Rig，Mecanim 自动重定向；需以上两个 change 完成对接。
+
+---
+
+### Phase 2.2 — 射击系统（约 2 个 changes）
+
+> **交付标准**：玩家可开枪，准星命中目标有视觉反馈，命中 Enemy 触发受击逻辑
+
+#### C1：射击输入 + Raycast 命中检测
+- [ ] 射击输入（LMB / 手柄 RT），瞄准模式下开启连发
+- [ ] 从相机中心发射 Raycast，检测 Layer `Enemy`
+- [ ] 命中后调用敌人受击接口（`IDamageable.TakeDamage(float)`）
+- [ ] 非瞄准状态下射击（腰射）精度降低（散布角偏移）
+
+#### C2：命中特效占位
+- [ ] 命中普通表面：DecalProjector 弹孔或简单 ParticleSystem 占位
+- [ ] 命中敌人：受击特效占位（红色粒子 / 闪烁），击杀时触发死亡临时效果
+- [ ] HUD 占位：准星动态扩散（射击后短暂扩大）
+
+---
+
+### Phase 2.3 — 敌人基础 + 波次管理器（约 3~4 个 changes）
+
+> **交付标准**：敌人可生成、可受击扣血、死亡；波次管理器可触发多波并推进
+
+#### C1：敌人 Prefab 骨架（模型占位）
+- [ ] Enemy Prefab（初期用 Capsule 占位，敌人模型选定后替换）
+- [ ] `EnemyController` MonoBehaviour（实现 `IController`，接入 QF）：
+  - `float MaxHp` / `float CurrentHp`（`BindableProperty`）
+  - `float DamageReductionFactor`（Phase 4 联动时由 Linking 层写入）
+  - `IDamageable.TakeDamage(float raw)` → 实际伤害 = `raw × (1 - DamageReductionFactor)`
+- [ ] 死亡处理：播放临时死亡效果，通知 WaveSystem 敌人已消灭，销毁 GameObject
+
+#### C2：敌人 AI（Behavior Tree）
+- [ ] 确认 BT 包方案（`com.unity.behavior` 或第三方），添加到 `Packages/manifest.json`，更新 `DEPENDENCIES.md`
+- [ ] 实现最小 BT：`Idle → Detect Player → Chase → Attack (Melee)` 状态
+  - Detect：球形 OverlapSphere 检测玩家距离
+  - Chase：直线追踪（无 NavMesh，Phase 6 可升级为 NavMesh）
+  - Attack：近战范围内定时普通攻击，调用 PlayerSystem 扣血
+- [ ] 攻击对玩家造成 HP 伤害（通过 `this.SendCommand<DamagePlayerCommand>(damage)`，不直接操作 PlayerModel）
+
+#### C3：波次管理器（对接 WaveSystem/WaveModel）
+- [ ] `WaveConfig` ScriptableObject：每波敌人数量 / 种类 / SpawnPoints 引用
+- [ ] `WaveSystem.OnInit` 读取 WaveModel，`OnStartWave()` 按配置生成敌人 Prefab
+- [ ] 监听全灭（敌人死亡时 WaveModel 更新存活数 → 归零触发 `OnWaveClear`）
+- [ ] `OnWaveClear` → 延迟 3 秒 → 推进波次并发下一波（波次数写入 WaveModel）
+
+> **注意**：`OnChainFailed` 扣血、SyncRate 增减逻辑**不在此 change 实现**，等 Phase 4 接入 HackSystem 后统一处理。
+
+---
+
+### Phase 2.4 — 骇入触发检测（约 1~2 个 changes）
+
+> **交付标准**：按骇入键准星命中有效目标时，Console 打印目标信息；不接 HackSession
+
+#### C1：HackTrigger 组件
+- [ ] `HackTrigger` MonoBehaviour（实现 `IController`）：
+  - 监听骇入键（默认 F / 手柄 LB），无骇入中时触发检测
+  - 0.2~0.3 秒防误触冷却（同时防止骇入结束瞬间再触发）
+  - Raycast 检测准星命中范围内最近 Enemy（Layer `Enemy`）
+  - 命中 → `Debug.Log($"[HackTrigger] 命中 {target.name}，等待 Phase 4 接入")` 占位
+  - 未命中 / 已有骇入中 → 无反应
+- [ ] `StartHackCommand` 在此 change 打通至 HackSystem（HackSystem 此阶段仍为空实现，仅打 Log）
+
+---
+
+### 注意（全 Phase 2）
+- 敌人需要暴露 `float DamageReductionFactor` 属性，Phase 4 联动时由 Linking 层写入
 - 骇入触发逻辑只做检测，**不接 HackSession**，等 Phase 4
+- 敌人模型待选定，Phase 2.3 C1 先用 Capsule 占位；选定后在 Phase 2.3 C1 归档前完成 Prefab 替换，或单独一个补丁 change 完成外观替换
+- SyncRate 系统（PlayerSystem 受伤下降）在 Phase 4 实现，Phase 2 只做 HP 扣减
 
 ---
 
