@@ -3,19 +3,26 @@ using QFramework;
 namespace Unomata.Gameplay
 {
     /// <summary>
-    /// UNOMATA QFramework Architecture 入口类
-    /// Phase 0: 最小化初始化，Phase 2 补充 Systems/Models
+    /// UNOMATA QFramework Architecture 入口类。
+    ///
+    /// 已注册：
+    ///   Model：PlayerModel / WaveModel
+    ///   System：PlayerSystem / WaveSystem
+    ///   Commands（骨架）：StartHackCommand / SelectCardCommand / HealCommand / DamagePlayerCommand
+    ///
+    /// Phase 4 补充：HackSystem / SyncRateModel / SyncRateSystem 等。
     /// </summary>
     public class GameApp : Architecture<GameApp>
     {
         protected override void Init()
         {
-            // Phase 2 补充：
-            // this.RegisterSystem<HackSystem>(new HackSystem());
-            // this.RegisterSystem<WaveSystem>(new WaveSystem());
-            // this.RegisterSystem<PlayerSystem>(new PlayerSystem());
-            // this.RegisterModel<PlayerModel>(new PlayerModel());
-            // this.RegisterModel<WaveModel>(new WaveModel());
+            // ── Model 层（先于 System 注册）────────────────────────────
+            this.RegisterModel<PlayerModel>(new PlayerModel());
+            this.RegisterModel<WaveModel>(new WaveModel());
+
+            // ── System 层 ───────────────────────────────────────────────
+            this.RegisterSystem<PlayerSystem>(new PlayerSystem());
+            this.RegisterSystem<WaveSystem>(new WaveSystem());
         }
     }
 }
