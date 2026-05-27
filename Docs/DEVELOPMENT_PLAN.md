@@ -58,6 +58,7 @@ Phase 6  打磨与验证（A+B）
 - [x] 第三方资产 URP 材质兼容性检查（Mech Pack / SciFiArena / SciFiEffects 三个高风险包）
 - [x] 第三方资产 B 档最小可用性验证（5 个 Sandbox 场景，每包跑通最小 demo，不接业务）
 - [x] 敲定敌人 BT 框架选型 = Opsive Behavior Designer（已导入并验证），同步 `DEPENDENCIES.md` 与 Phase 2.3 C2 任务行
+- [x] FemaleRunnerAnimset（RifleGirl 跳跃动画补充包）二层目录迁移 + 副作用清理（覆盖 CombatGirls 材质/脚本回滚、manifest.json 新增包评估），详见 change `phase0-femalerunner-animset-validate`
 
 ---
 
@@ -142,9 +143,9 @@ Phase 6  打磨与验证（A+B）
 
 ---
 
-### Phase 2.1 — 角色控制器（方案B补丁，约 2 个 changes）
+### Phase 2.1 — 角色控制器（方案B补丁，约 4 个 changes）
 
-> **交付标准**：RifleGirl 模型在场景中正确运动，MagicaCloth2 布料物理正常，持枪上半身动画正确叠加，瞄准相机切换有效
+> **交付标准**：RifleGirl 模型在场景中正确运动，MagicaCloth2 布料物理正常，基础动画素材统一为 CombatGirls 风格，持枪上半身动画正确叠加，瞄准相机切换有效，输入入口 QF 化（Model 单一来源）
 
 #### 技术选型决策（已确认）
 
@@ -153,7 +154,9 @@ Phase 6  打磨与验证（A+B）
 | 换模型方式 | 嵌入 `Rifle_Full_Body.prefab` 作为子对象 | CombatGirls 有分件结构（15个部件），布料部件（Rifle_Dress / Rifle_Jacket）挂有 MagicaCloth2 组件，单替换 Mesh 会丢失布料物理 |
 | 相机方案 | 两台 Cinemachine 虚拟相机 Priority 切换 | 标准 Cinemachine 模式，参数隔离，过渡由 Brain 自动处理 |
 | 3D UI 相机 | 不新增，使用 World Space Canvas | 符合 GAME_DESIGN 设计意图（全息投影感），Main Camera 自动渲染 World Space Canvas，无需额外相机 |
-| 上半身Layer 非瞄准状态 | 权重 = 0（完全走 StarterAssets Blend Tree） | 非瞄准时不干预下半身主动画，瞄准时才叠加持枪动画 |
+| 上半身Layer 非瞄准状态 | 权重 = 0（完全走 base layer Blend Tree） | 非瞄准时不干预下半身主动画，瞄准时才叠加持枪动画 |
+| 基础动画素材归属 | Base Layer 全部 Motion 替换为 RifleGirl 动画 | StarterAssets 仅提供骨架与控制器逻辑（移动/跳跃状态机），动画素材统一 CombatGirls 风格；通过复制 controller 到 `_Project/` 实现，不修改第三方文件 |
+| 输入接入策略 | Adapter 方案：PlayerController 接管 PlayerInput 回调，PlayerInputModel 为状态唯一源，StarterAssetsInputs 退化为 ThirdPersonController.cs 的下游 Adapter（单向同步） | 既符合 QF 单一来源规范，又避免 fork 第三方 ThirdPersonController.cs |
 
 #### C1：视觉模型嵌入 + 场景清理 ✅ 已完成（change: `unity-character-model-swap`，归档 2026-05-26）
 - [x] 在 `PlayerArmature` 根对象下将 StarterAssets 原视觉子对象（`Geometry/Armature_Mesh`）**禁用**（保留备份，不删除）
@@ -163,26 +166,84 @@ Phase 6  打磨与验证（A+B）
 - [x] 验证 MagicaCloth2 布料物理（Rifle_Dress、Rifle_Jacket）在 Play Mode 下正常模拟
 - [x] Play Mode 验证：角色正确显示，材质无紫色（URP Toon Shader 已转换），移动动画通过 Humanoid Retargeting 正常播放
 
-#### C2：上半身动画层 + 双相机瞄准切换（合并）
+> **B1a 遗留偏差**：仅切换了 Avatar，Controller 仍指向 StarterAssets 自带版本，Base Layer 动画来源未脱离 StarterAssets。该偏差由下一个 change（C2）修复。
 
-**动画层（Animator Controller）：**
-- [ ] 在 `StarterAssetsThirdPerson.controller`（或复制为项目自有 Controller）中新增 Layer `UpperBodyAim`
-  - Blending：Override，默认 Weight = 0
-  - 绑定 Avatar Mask（上半身：Spine 以上全部骨骼，下半身权重=0）
-- [ ] `UpperBodyAim` Layer 状态机：`Empty` → （瞄准触发）→ `AimIdle`（对接 `R_AimIdle`）+ 移动 blend tree（`R_AimWalk_F` / `R_AimWalk_B` / `R_AimWalk_L` / `R_AimWalk_R`）
-- [ ] 瞄准输入触发时，通过 Animator 参数将 `UpperBodyAim` Layer 权重渐变到 1；退出瞄准时渐变回 0
+#### C2：基础动画归属修复（change: `unity-character-base-anim-swap`，待开始）
+
+> 修复 C1 遗留的动画归属偏差，把 Base Layer 动画素材统一切到 RifleGirl。本 change 仅替换 Motion，不改状态机拓扑，不改参数名。
+
+**前置摸底：**
+- [ ] 扫描 `Assets/ThirdParty/Characters/Player/CombatGirls/RifleGirl/Animations/` 全目录，列出可用基础动画清单
+- [ ] 对照 StarterAssets controller 状态机节点，标注每个节点的 Motion 替换方案；缺失素材的节点明确替代策略
+- [ ] 锁定 unarmed/armed idle 选型
+
+**Controller 替换：**
+- [ ] 复制 `StarterAssetsThirdPerson.controller` 到 `Assets/_Project/Animations/Player/UnomataPlayer.controller`
+- [ ] Base Layer 内逐节点替换 Motion 引用为 RifleGirl 对应 fbx 动画
+- [ ] 状态机拓扑、参数名（`Speed` / `MotionSpeed` / `Grounded` / `Jump` / `FreeFall`）保持不变
+- [ ] `PlayerArmature` 根 Animator Controller 字段切换到 `UnomataPlayer.controller`
+- [ ] 不修改 `Assets/ThirdParty/Locomotion/StarterAssets/` 任何文件
+
+**Play Mode 验收：**
+- [ ] 站立/移动/奔跑/跳跃/落地全部播放 RifleGirl 风格动画
+- [ ] Console 零红色错误，原 StarterAssets controller 文件未被改动
+
+#### C3：上半身瞄准动画层 + 双相机切换（change: `unity-character-aim-layer`，待开始）
+
+> 在 C2 产出的 `UnomataPlayer.controller` 上新增 UpperBodyAim Layer + 接入 Cinemachine 双相机。输入暂用临时驱动器，C4 替换。
+
+**Avatar Mask：**
+- [ ] 新建 `Assets/_Project/Animations/Player/UpperBody.mask`（Humanoid Mask，Spine 以上 + 双臂，下半身 + Root 不勾）
+
+**动画层（在 `UnomataPlayer.controller` 上扩展）：**
+- [ ] 新增 Layer `UpperBodyAim`：Override，Weight = 0，绑定 `UpperBody.mask`
+- [ ] 新增参数：`IsAiming` (bool)
+- [ ] `UpperBodyAim` 状态机：`Empty` ↔ `AimMove`（`IsAiming` 触发）；`AimMove` 含 9-motion 2D Cartesian BlendTree（`R_AimIdle` 中心 + 8 方向 `R_AimWalk_F/B/L/R/FL/FR/BL/BR`）
+- [ ] BlendTree 输入参数复用 base layer 移动参数（启动 change 前确认参数名）
+- [ ] Layer Weight 由脚本驱动（`Animator.SetLayerWeight` + `Mathf.MoveTowards`），约 0.15s 完成 0↔1
 
 **Cinemachine 双相机：**
-- [ ] `PlayerFollowCamera`（已有，Priority = 10）：普通跟随，保持 StarterAssets 默认设置
-- [ ] 新建 `PlayerAimCamera`（VirtualCamera，Priority 默认 = 0）：
-  - Body：Framing Transposer，肩膀偏移（Camera Offset X ≈ 0.5 右肩）
-  - Aim：Composer，Center On Activate
-  - FOV = 40（普通跟随 FOV = 60，具体数值 Phase 5 平衡）
-- [ ] 瞄准输入（RMB / 手柄 LT）时：`PlayerAimCamera.Priority = 15`，`PlayerFollowCamera.Priority = 10` → Brain 自动过渡
-- [ ] 退出瞄准：`PlayerAimCamera.Priority = 0`，回到 `PlayerFollowCamera`
-- [ ] Play Mode 验证：普通移动与瞄准移动的上半身动画正确叠加，两相机切换平滑，无画面抖动
+- [ ] `PlayerFollowCamera`（已有，Priority = 10）保持不变
+- [ ] 新建 `PlayerAimCamera`（VirtualCamera，Priority = 0）：
+  - Body：Framing Transposer / 3rd Person Follow（依 Cinemachine 版本，C3 启动前确认），右肩偏移（X ≈ 0.5）
+  - FOV = 40（Phase 5 平衡时调整）
+- [ ] `AimStateChangedEvent` 触发 `PlayerAimCamera.Priority = 15 / 0`，由 Brain 自动过渡
 
-> **方案 B 补丁清单回顾**（原 Phase 0 验证结论）：两者均 Humanoid Rig，Mecanim 自动重定向；需以上两个 change 完成对接。
+**QF 数据流（不含输入入口）：**
+- [ ] `PlayerModel.IsAiming`（`BindableProperty<bool>`）
+- [ ] `SetAimStateCommand` → `PlayerSystem.SetAiming(bool)` → 写 Model + `SendEvent<AimStateChangedEvent>`
+- [ ] `AnimatorAimBridge` / `CameraAimBridge`（独立 MB，IController，订阅 Event）
+- [ ] 临时输入：`TempAimInputDriver`（读 `Input.GetMouseButton(1)` 发 Command，C4 删除）
+
+**Play Mode 验收：**
+- [ ] 普通移动/瞄准移动上半身动画正确叠加，下半身位移由 base layer 驱动
+- [ ] 双相机切换平滑无抖动
+- [ ] Console 零红色错误
+
+#### C4：输入入口 QF 化（change: `unity-player-input-qf-bridge`，待开始）
+
+> 把输入入口从 `StarterAssetsInputs` 接管到 `PlayerController`，让 `PlayerInputModel` 成为状态唯一源。`StarterAssetsInputs` 退化为 Adapter 缓冲，不再绑 PlayerInput 回调。同时清理 C3 的临时输入驱动器。
+
+**新建：**
+- [ ] `Player/PlayerInputModel.cs`：`Move` / `Jump` / `Sprint` / `IsAiming` / `Fire` 全部 `BindableProperty<>`
+- [ ] `Player/PlayerController.cs`（IController）：订阅 PlayerInput Action 回调 → `SendCommand<SetXxxInputCommand>`
+- [ ] `Player/SAInputAdapter.cs`（`[DefaultExecutionOrder(-10)]`）：Update 内单向 Model → `StarterAssetsInputs` 字段同步
+- [ ] `Commands/SetMoveInputCommand` / `SetJumpInputCommand` / `SetSprintInputCommand` / `SetFireInputCommand`
+
+**修改：**
+- [ ] `GameApp.cs` 注册 `PlayerInputModel`（PlayerModel 之后）
+- [ ] `PlayerSystem.OnInit` 订阅 `PlayerInputModel.IsAiming` 变化（Model→System 单向数据流）
+- [ ] 场景：`PlayerArmature` 上 `PlayerInput` Behavior 改为 `Invoke C# Events`/`Invoke Unity Events`，回调由 `StarterAssetsInputs.OnXxx` 改连到 `PlayerController.OnXxx`
+
+**清理：**
+- [ ] 删除 C3 留下的 `TempAimInputDriver.cs`
+
+**Play Mode 验收：**
+- [ ] 输入全部走 QF 链路（PlayerInput → Command → Model → System / Adapter）
+- [ ] 临时禁用 `PlayerController` → 角色完全无响应（验证唯一入口）
+- [ ] C3 视觉验收行为保持一致（动画层/双相机切换无回退）
+
+> **方案 B 补丁清单回顾**（原 Phase 0 验证结论）：两者均 Humanoid Rig，Mecanim 自动重定向；Phase 2.1 通过 C1～C4 四个 change 完整对接，把 PlayerArmature 从"骨架重定向 SA 动画 + SA 输入"过渡到"完整 RifleGirl 动画素材 + QF 化输入入口"。
 
 ---
 

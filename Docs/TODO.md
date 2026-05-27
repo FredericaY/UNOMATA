@@ -275,9 +275,11 @@ Phase 2（B端，Unity）:   Change B0 → B1 → B2 → B3a → B3b → B3c →
 ```
 B0(QF骨架)
   ├──→ B1a(模型换装)
-  │      └──→ B1b(动画层+相机)
-  │                └──→ B2a(射击Raycast)
-  │                          └──→ B2b(命中特效)
+  │      └──→ B1b.1(基础动画归属修复)
+  │                └──→ B1b.2(瞄准动画层+双相机)
+  │                          └──→ B1b.3(输入QF化-Adapter方案)
+  │                                    └──→ B2a(射击Raycast)
+  │                                              └──→ B2b(命中特效)
   ├──→ B3a(敌人骨架)
   │      └──→ B3b(敌人AI BT)
   │                └──→ B3c(波次管理器)
@@ -341,35 +343,186 @@ B0（QF骨架）、Phase 0 资产整理（已归档 ✅）
 
 ---
 
-## B1b — `unity-character-aim-layer` ⬜ 待开始（依赖 B1a）
+## B1b.1 — `unity-character-base-anim-swap` ⬜ 待开始（依赖 B1a + Phase 0 FemaleRunnerAnimset 整理 change）
 
-**职责**：添加上半身持枪动画层，实现瞄准模式下动画层切换 + Cinemachine 双相机 Priority 切换。
+**职责**：修复 B1a 遗留的动画归属偏差——把 PlayerArmature 根 Animator 的 Controller 从 StarterAssets 自带版本切换为项目自有版本，Base Layer 的全部 Motion 替换为 RifleGirl / FemaleRunnerAnimset 对应动画素材。
+
+**背景**：B1a 仅切换了 Avatar（骨骼映射），Controller 仍指向 `StarterAssetsThirdPerson.controller`，里面引用 StarterAssets 自带的 idle/walk/run/jump 动画。Humanoid Retargeting 让其"能跑"但违背"StarterAssets 仅提供骨架与控制器逻辑"的约定。本 change 把动画素材彻底切到 CombatGirls 系列（含 FemaleRunnerAnimset 跳跃补充包）。
+
+### 已敲定决策
+
+| 决策项 | 选择 | 备注 |
+|--------|------|------|
+| Idle 风格选型 | **armed**（持枪 idle 全程），用 `R_Idle.fbx` | 视觉风格统一，符合 PRAGMATA 战斗风；不做 unarmed/armed 切换过渡 |
+| 缺失素材回退策略 | **逐项摸底后决策**，写入 tasks.md | B1b.1 启动时 propose 阶段完成具体映射表 |
+| BlendTree 改动范围 | **仅替换 Motion 引用，不改状态机拓扑** | 保 ThirdPersonController.cs 的硬编码参数读取兼容（`Speed` / `MotionSpeed` / `Grounded` / `Jump` / `FreeFall`） |
+| Animator Controller 复制方式 | `AssetDatabase.CopyAsset`（生成独立 GUID） | 避免文件 mv 导致 GUID 共享 |
+| Override Controller 不采用 | 不用 `AnimatorOverrideController` | Override 仍依赖第三方 controller，未脱钩 |
+| 跳跃链路素材来源 | **FemaleRunnerAnimset**（待 Phase 0 该 change 整理完成后引用） | RifleGirl Normal/ 目录无 jump/fall/land；FemaleRunnerAnimset 提供完整 Jump/Land/RunJump/Falldown |
+
+### 已完成的资产摸底结论
+
+**SA Controller 状态机解构（Base Layer）：**
+
+```
+Base Layer
+├─ Idle Walk Run Blend  [BlendTree 1D, by Speed]
+│  ├─ Threshold=0  →  Stand--Idle.anim.fbx
+│  ├─ Threshold=2  →  Locomotion--Walk_N.anim.fbx
+│  └─ Threshold=6  →  Locomotion--Run_N.anim.fbx
+├─ JumpStart  ← Jump--Jump.anim.fbx       (Jump trigger)
+├─ JumpLand   ← Locomotion--Run_N_Land    (Grounded=true)
+├─ InAir      ← Jump--InAir.anim.fbx      (FreeFall=true)
+└─ Fly        ← (低频，可保留 SA Motion)
+```
+
+**Motion 替换映射表（5 个主节点，第 6 个 Fly 保留）：**
+
+| 槽位 | 当前 SA Motion | 目标 Motion | 来源 |
+|------|----------------|------------|------|
+| BlendTree[0] Idle | `Stand--Idle` | `R_Idle.fbx` | RifleGirl/Normal |
+| BlendTree[2] Walk | `Locomotion--Walk_N` | `R_Walk.fbx` | RifleGirl/Normal |
+| BlendTree[6] Run | `Locomotion--Run_N` | `R_Run.fbx` | RifleGirl/Normal |
+| JumpStart | `Jump--Jump` | `R_Jump_2h.fbx`（候选） | FemaleRunnerAnimset/Jumps/Jump |
+| InAir | `Jump--InAir` | `R_Jump_AirL.fbx` 或 `AirR.fbx`（候选） | FemaleRunnerAnimset/Jumps/Jump |
+| JumpLand | `Locomotion--Run_N_Land` | `R_Land_2h.fbx`（候选） | FemaleRunnerAnimset/Jumps/Land |
+| Fly | （SA fbx） | 保留不动 | — |
+
+> 候选素材的最终对应在 B1b.1 propose 阶段做最后核对（FemaleRunnerAnimset 的 1h/2h/3h 后缀代表跳跃高度变体，需要 Play 验证哪个最自然）。
 
 ### 范围
 
-**Animator Controller（复制为项目自有版本，不直接改 StarterAssets 原文件）：**
-- [ ] 新增 Layer `UpperBodyAim`：Override 模式，默认 Weight = 0，绑定上半身 Avatar Mask
-- [ ] `UpperBodyAim` 状态机：`AimIdle`（`R_AimIdle`）+ 移动 Blend Tree（`R_AimWalk_F/B/L/R`），由 `IsAiming` bool 参数控制 Weight
-- [ ] 瞄准时 Layer Weight 渐变到 1，退出瞄准渐变回 0（`Animator.SetLayerWeight`）
+**前置依赖（必须完成）：**
+- Phase 0 FemaleRunnerAnimset 整理 change（见 Phase 0 任务清单）已归档，`Assets/ThirdParty/Characters/Player/FemaleRunnerAnimset/` 二级路径就位
+
+**Animator Controller 替换：**
+- [ ] 用 `AssetDatabase.CopyAsset` 复制 `Assets/ThirdParty/Locomotion/StarterAssets/ThirdPersonController/Character/Animations/StarterAssetsThirdPerson.controller` 到 `Assets/_Project/Animations/Player/UnomataPlayer.controller`
+- [ ] 在 `UnomataPlayer.controller` 的 Base Layer 内按"Motion 替换映射表"逐节点替换 Motion 引用（不修改状态机拓扑、参数、过渡条件）
+- [ ] Fly 节点保留 SA Motion，无替换
+- [ ] 把 `PlayerArmature` 根对象 Animator 组件的 Controller 字段从 `StarterAssetsThirdPerson` 切换到 `UnomataPlayer.controller`（SerializedObject 操作）
+
+**禁止项：**
+- [ ] 不得修改 `Assets/ThirdParty/Locomotion/StarterAssets/` 下任何文件
+- [ ] 不得修改 `Assets/ThirdParty/Characters/Player/CombatGirls/` 与 `Assets/ThirdParty/Characters/Player/FemaleRunnerAnimset/` 下任何文件
+- [ ] 不得修改状态机参数名（`Speed` / `MotionSpeed` / `Grounded` / `Jump` / `FreeFall`）
+- [ ] 不使用 `AnimatorOverrideController`（仍依赖第三方文件未脱钩）
+
+**Play Mode 验收：**
+- [ ] 站立 / 前后左右移动 / 奔跑 / 跳跃起跳 / 空中 / 落地全部播放 RifleGirl 系列风格动画（含 FemaleRunnerAnimset 跳跃链路）
+- [ ] Console 零红色错误，无 Avatar 警告
+- [ ] StarterAssets 原 controller 文件未被改动（git status 确认）
+
+### 依赖
+B1a（RifleGirl 嵌入 + Humanoid Avatar 已切换）；Phase 0 `phase0-femalerunner-animset-validate` 已归档
+
+---
+
+## B1b.2 — `unity-character-aim-layer` ⬜ 待开始（依赖 B1b.1）
+
+**职责**：在 `UnomataPlayer.controller` 上新增 UpperBodyAim 动画层，实现瞄准模式下上半身动画叠加 + Cinemachine 双相机 Priority 切换。输入暂用临时驱动器，B1b.3 替换。
+
+### 范围
+
+**Avatar Mask：**
+- [ ] 新建 `Assets/_Project/Animations/Player/UpperBody.mask`（Humanoid Mask 模式）
+  - ✅ 勾选：Spine / Chest / UpperChest / Neck / Head / 双臂全骨骼
+  - ❌ 不勾：Hips / 双腿 / Root（不参与位移）
+
+**Animator Controller（在 B1b.1 产出的 `UnomataPlayer.controller` 上扩展）：**
+- [ ] 新增 Layer `UpperBodyAim`：Override 模式，默认 Weight = 0，绑定 `UpperBody.mask`
+- [ ] 新增 Animator 参数：`IsAiming` (bool)
+- [ ] `UpperBodyAim` 状态机：
+  - `Empty` 状态（默认）
+  - `AimMove` 状态，含 9 motion BlendTree（2D Cartesian）：中心 `R_AimIdle` + 8 方向 `R_AimWalk_F/B/L/R/FL/FR/BL/BR`
+  - `Empty ↔ AimMove` 由 `IsAiming` bool 触发
+  - BlendTree 输入参数复用 base layer 已有的移动参数（前置任务确认参数名）
+- [ ] Layer Weight 渐变由脚本驱动（`Animator.SetLayerWeight` + `Mathf.MoveTowards`），约 0.15s 完成 0↔1
 
 **Cinemachine 双相机：**
 - [ ] `PlayerFollowCamera`（已有，Priority = 10）保持不变
 - [ ] 新建 `PlayerAimCamera`（VirtualCamera，默认 Priority = 0）：
-  - Body：Framing Transposer，Camera Offset X ≈ 0.5（右肩）
+  - Body：Framing Transposer / 3rd Person Follow（依 Cinemachine 版本，B1b.2 启动前确认），Camera Offset X ≈ 0.5（右肩）
   - FOV = 40（Phase 5 平衡时调整）
-- [ ] 瞄准输入（RMB / 手柄 LT）：`PlayerAimCamera.Priority = 15`；退出瞄准：`Priority = 0`
+- [ ] 切换：`AimStateChangedEvent` 触发 `PlayerAimCamera.Priority = 15 / 0`，由 Brain 自动过渡
 
-**输入处理（接入 QF，使用 PlayerController 组件）：**
-- [ ] `PlayerController`（实现 `IController`）：监听 Aim 输入，`SendCommand<SetAimStateCommand>(bool)` 或通过 event 通知 PlayerSystem
+**QF 数据流（不含输入入口，输入留给 B1b.3）：**
+- [ ] `PlayerModel` 增加 `BindableProperty<bool> IsAiming`
+- [ ] `Commands/SetAimStateCommand.cs`：调 `PlayerSystem.SetAiming(bool)`
+- [ ] `PlayerSystem.SetAiming(bool)`：写 `PlayerModel.IsAiming.Value`，`SendEvent<AimStateChangedEvent>`
+- [ ] `Player/AimStateChangedEvent.cs`：`struct AimStateChangedEvent { bool IsAiming; }`
+- [ ] `Player/AnimatorAimBridge.cs`（独立 MB，IController）：`RegisterEvent<AimStateChangedEvent>` → `Animator.SetBool("IsAiming", ...)` + Layer Weight 渐变
+- [ ] `Camera/CameraAimBridge.cs`（独立 MB，IController）：`RegisterEvent<AimStateChangedEvent>` → 切 `PlayerAimCamera.Priority`
 
-- [ ] Play Mode 验证：普通移动与瞄准移动上半身动画正确叠加，双相机切换平滑无抖动
+**临时输入驱动（B1b.3 删除）：**
+- [ ] `Player/TempAimInputDriver.cs`：每帧读 `Input.GetMouseButton(1)` 状态变化，`SendCommand<SetAimStateCommand>(bool)`，文件头部注释 `// TEMP: B1b.3 替换为 PlayerController`
+
+**Play Mode 验收：**
+- [ ] 普通移动与瞄准移动上半身动画正确叠加（下半身位移由 base layer 驱动不受影响）
+- [ ] 双相机切换平滑无抖动，肩位偏移正确
+- [ ] Console 零红色错误
 
 ### 依赖
-B1a（RifleGirl 已嵌入，Humanoid Avatar 已切换）
+B1b.1（`UnomataPlayer.controller` 已就位且 Base Layer 已切 RifleGirl 动画）
 
 ---
 
-## B2a — `unity-shooting-raycast` ⬜ 待开始（依赖 B1b）
+## B1b.3 — `unity-player-input-qf-bridge` ⬜ 待开始（依赖 B1b.2）
+
+**职责**：把输入入口从 `StarterAssetsInputs` 接管到 QF 化的 `PlayerController`，让 Model 成为输入状态唯一来源。`StarterAssetsInputs` 退化为 Adapter，仅作为 ThirdPersonController.cs 的下游消费缓冲，不再绑定 PlayerInput 回调。
+
+### 设计要点（Adapter 方案 / 戊方案）
+
+```
+PlayerInput → PlayerController (IController) → SendCommand → PlayerInputModel
+                                                               │
+                              ┌────────────────────────────────┼────────────────────────────┐
+                              ▼                                ▼                            ▼
+                  PlayerSystem 订阅 IsAiming         SAInputAdapter (LateUpdate)    其他 System 直接读
+                  → SendEvent<AimStateChanged>        Model → StarterAssetsInputs
+                                                              字段单向同步
+                                                              ↓ 读字段
+                                                      ThirdPersonController.cs
+                                                      （第三方，不改）
+```
+
+### 范围
+
+**新建文件：**
+- [ ] `Player/PlayerInputModel.cs`：`BindableProperty<Vector2> Move` / `BindableProperty<bool> Jump` / `BindableProperty<bool> Sprint` / `BindableProperty<bool> IsAiming` / `BindableProperty<bool> Fire`
+- [ ] `Player/PlayerController.cs`（IController，MonoBehaviour）：持 `PlayerInput` 引用，订阅 InputAction 回调；每个回调 → `SendCommand<SetXxxInputCommand>`
+- [ ] `Player/SAInputAdapter.cs`（普通 MB，`[DefaultExecutionOrder(-10)]`）：`OnInit` 取 `PlayerInputModel` + `StarterAssetsInputs` 引用；Update 把 Model 字段单向写到 `StarterAssetsInputs.move/jump/sprint/...`
+- [ ] `Commands/SetMoveInputCommand.cs`
+- [ ] `Commands/SetJumpInputCommand.cs`
+- [ ] `Commands/SetSprintInputCommand.cs`
+- [ ] `Commands/SetFireInputCommand.cs`
+- [ ] （`SetAimStateCommand` 已在 B1b.2 实装，沿用）
+
+**修改：**
+- [ ] `GameApp.cs`：`RegisterModel<PlayerInputModel>`（注册顺序：放在 PlayerModel 之后）
+- [ ] `PlayerSystem.cs`：`OnInit` 订阅 `PlayerInputModel.IsAiming` 变化（替代 B1b.2 中由 Command 直接调 `SetAiming` 的链路；这是 QF 的 Model→System 单向数据流体现）
+- [ ] 场景：`PlayerArmature` 上 `PlayerInput` 组件 Behavior 改为 `Invoke C# Events` 或 `Invoke Unity Events`，回调由原 `StarterAssetsInputs.OnMove/OnJump/OnAim/...` 改连到 `PlayerController.OnMove/OnJump/OnAim/...`
+
+**清理：**
+- [ ] 删除 B1b.2 留下的 `Player/TempAimInputDriver.cs`
+
+**Play Mode 验收：**
+- [ ] 移动 / 跳跃 / 冲刺 / 瞄准全部走 QF 链路（PlayerInput → Command → Model → System / Adapter）
+- [ ] 临时禁用 `PlayerController` 组件 → 角色完全无响应（证明输入唯一入口已迁移）
+- [ ] `StarterAssetsInputs` 组件 PlayerInput 回调已断开（Inspector 检查）
+- [ ] Console 零红色错误
+- [ ] B1b.2 视觉验收的全部行为保持一致（动画层 / 双相机切换无回退）
+
+### 依赖
+B1b.2（瞄准链路视觉表现已就位，本 change 只替换输入入口）
+
+### 风险点
+- **执行顺序**：`SAInputAdapter` 必须早于 `ThirdPersonController.Update`，用 `[DefaultExecutionOrder(-10)]` 强制
+- **PlayerInput Behavior**：StarterAssets 默认 `Send Messages` 自动调 `StarterAssetsInputs.OnXxx`，必须改为 `Invoke C# Events`/`Invoke Unity Events` 才能切断
+- **InputAction 复用**：直接复用 StarterAssets 的 `.inputactions` asset，不新建 action map
+
+---
+
+## B2a — `unity-shooting-raycast` ⬜ 待开始（依赖 B1b.3）
 
 **职责**：射击输入 + Raycast 命中检测 + 调用敌人受击接口。
 
@@ -382,7 +535,7 @@ B1a（RifleGirl 已嵌入，Humanoid Avatar 已切换）
 - [ ] Layer 设置：在 Unity Tags & Layers 中添加 `Enemy` Layer
 
 ### 依赖
-B1b（相机已建立，瞄准状态可查询）
+B1b.3（输入 QF 化已完成，瞄准状态可由 Model 查询，相机已建立）
 
 ---
 

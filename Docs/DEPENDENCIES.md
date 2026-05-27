@@ -142,6 +142,7 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 | 资产名 | 用途 | 目标目录 | 状态 |
 |--------|------|---------|------|
 | CombatGirls - RifleCharacterPack | 玩家角色模型+动画 | `Assets/ThirdParty/Characters/Player/CombatGirls/` | ✅ 已验证-方案B |
+| FemaleRunnerAnimset | RifleGirl 跳跃/Land/RunJump 动画补充包（CombatGirls 主包缺失跳跃链路） | `Assets/ThirdParty/Characters/Player/FemaleRunnerAnimset/` | ✅ 已迁移-`phase0-femalerunner-animset-validate` |
 | Starter Assets - Third Person Controller | TPS控制器基础 | `Assets/ThirdParty/Locomotion/StarterAssets/` | ✅ 已验证-方案B |
 | MagicaCloth2 | CombatGirls 布料物理依赖 | `Assets/ThirdParty/Cloth/MagicaCloth2/` | ✅ 已导入 |
 | MechPack | 敌人角色模型 + 动画（mech_defender / mech_walker / robot_dog） | `Assets/ThirdParty/Characters/Enemy/MechPack/` | ✅ 已迁移-URP 转换 3 mat |
@@ -156,6 +157,7 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 - ✅ **已验证-方案B**：`phase0-cleanup-and-validate` 期完成 URP 转换 + Retarget 验证
 - ✅ **已迁移-...**：`phase0-third-party-assets-validate` 期完成二层目录迁移与对应处理
 - ⚠ **已迁移-... 登记遗留**：迁移完成但有 Phase 6 待处理项（详见对应 change tasks.md 的"遗留项"段）
+- ⏳ **待迁移-`<change-name>`**：包刚导入 Asset 根目录或临时位置，等待指定 change 完成二层目录归位 + 副作用清理
 - ⏳ **待选型**：尚未挑选具体资产包，规划阶段占位条目
 
 ### UI 资产选型待办（Phase 3 前）
