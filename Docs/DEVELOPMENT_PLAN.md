@@ -62,16 +62,17 @@ Phase 6  打磨与验证（A+B）
 
 ### 任务清单
 - [x] `CardData` + `CardType` / `CardColor` / `ChainDirection` 枚举：纯数据，含 `CardData.Empty` 静态实例 *(Change 1 cardchain-types, 2026-05-26)*
-- [ ] `HackDifficultyConfig`：难度参数数据类（OptionCount / TargetChainCount / TotalTime / SolvableRate / WildAppearRate）
-- [ ] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现 Option F 合法位扩展守卫版）：
-  - [ ] deck 构成：40 Number + 8 Reverse = 48 张，**王牌不进 deck**
-  - [ ] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率，下界语义）
-  - [ ] `WildAppearRate` 独立判定是否塞 1 张王牌
-  - [ ] 剩余位填非法牌；选项内不重复，跨轮可重
-  - [ ] **合法位扩展守卫**：`(null,null,*)` 状态非法池为空、`(C,null,*)` 状态非法池可能不足，缺口转为合法位补齐
-  - [ ] 反转牌仅作为合法/非法牌候选自然出现，不强塞
-  - [ ] `Empty` 永不出现在选项中
-  - [ ] 计算并返回 `isDeadlock` 标志（选项中无任一合法牌；`lastColor==null` 状态恒 false）
+- [x] `HackDifficultyConfig`：难度参数数据类（OptionCount / TargetChainCount / TotalTime / SolvableRate / WildAppearRate） *(Change 3 cardchain-deck-generator, 2026-05-27)*
+- [x] 选项生成器（按 `INTERFACE.md` 第五节"发牌算法"实现 Option F 合法位扩展守卫版）： *(Change 3 cardchain-deck-generator, 2026-05-27)*
+  - [x] deck 构成：40 Number + 8 Reverse = 48 张，**王牌不进 deck**
+  - [x] `SolvableRate` 决定本轮是否抽 1 张合法牌（轮级有解概率，下界语义）
+  - [x] `WildAppearRate` 独立判定是否塞 1 张王牌
+  - [x] 剩余位填非法牌；选项内不重复，跨轮可重
+  - [x] **合法位扩展守卫**：`(null,null,*)` 状态非法池为空、`(C,null,*)` 状态非法池可能不足，缺口转为合法位补齐
+  - [x] 反转牌仅作为合法/非法牌候选自然出现，不强塞
+  - [x] `Empty` 永不出现在选项中
+  - [x] 计算并返回 `isDeadlock` 标志（选项中无任一合法牌；`lastColor==null` 状态恒 false）
+  - [x] 选项数组 Fisher-Yates 洗牌，位置不可预测（详见 `GAME_DESIGN.md` 3.5.4）
 - [ ] `HackSession` 内部状态机：
   - [ ] `SessionState`：lastColor / lastNumber / direction
   - [ ] `IsValidNext()` 严格 ±1 升降序判定（lastColor==null 任意 ∨ 同色任意 ∨ 异色严格 ±1；反转后 lastColor!=null+lastNumber==null 异色全非法）

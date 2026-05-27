@@ -113,8 +113,12 @@ CardChainCore/
 │       ├── ChainDirection.cs     // enum (Change 1)
 │       ├── EndReason.cs          // enum (Change 1)
 │       ├── ComboType.cs          // enum 占位 (Change 1)
-│       └── CardData.cs           // class + Empty 单例 (Change 1)
-│       // 后续 Change 2~6 在此追加: HackDifficultyConfig / HackSession / HackResult 等
+│       ├── CardData.cs           // class + Empty 单例 (Change 1)
+│       ├── SessionState.cs       // internal 会话状态 (Change 2)
+│       ├── CardChainRules.cs     // IsValidNext / ApplyPrev 纯函数 (Change 2)
+│       ├── HackDifficultyConfig.cs  // 难度参数 (Change 3)
+│       └── OptionGenerator.cs    // 单轮选项生成器 + 48 张 deck (Change 3)
+│       // 后续 Change 4~7 在此追加: HackSession / HackResult 等
 ├── tests/Unomata.Core.Tests/
 │   └── CardChain/                // 镜像源码结构
 └── console/Unomata.Core.Console/

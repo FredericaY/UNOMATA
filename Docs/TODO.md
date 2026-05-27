@@ -82,35 +82,45 @@ Change 1（CardData/枚举）
 
 ---
 
-## Change 3 — `cardchain-deck-generator`
+## Change 3 — `cardchain-deck-generator` ✅ 已实施 (2026-05-27，待归档)
 
 **职责**：选项生成器（按 `INTERFACE.md` 第五节"发牌算法"Option F 版）+ 难度参数 config。
 
 ### 范围
-- [ ] `class HackDifficultyConfig`：`OptionCount` / `TargetChainCount` / `TotalTime` / `SolvableRate` / `WildAppearRate` 五字段
-- [ ] `internal class OptionGenerator`（或同等命名）：
-  - [ ] `Generate(state, config, random) → (CardData[] options, bool isDeadlock)`
-  - [ ] deck 构成：40 Number + 8 Reverse = 48 张逻辑牌池，**王牌不进 deck**
-  - [ ] `SolvableRate` 决定是否抽 1 张合法牌（下界语义）
-  - [ ] `WildAppearRate` 独立判定塞王牌
-  - [ ] 剩余位填非法牌
-  - [ ] **合法位扩展守卫**：非法池规模 < 所需非法位数时，缺口转为合法位
-  - [ ] 选项内不重复（同轮）
-  - [ ] `Empty` 永不出现在选项中
-  - [ ] 反转牌不强塞，仅作为合法/非法牌候选自然出现
-- [ ] 抽样池：48 张牌的逻辑代表（不必实例化对象，按 Type/Color/Number 笛卡尔积选取）
-- [ ] 注入式随机源（`Random` / 可 mock 接口）便于测试
-- [ ] xUnit 覆盖：
-  - [ ] 选项数量始终 = `OptionCount`
-  - [ ] 选项内不重复
-  - [ ] `Empty` 不出现
-  - [ ] `SolvableRate=1, WildAppearRate=0` 时永远有合法牌且无王牌
-  - [ ] `SolvableRate=0, WildAppearRate=0` 时一般 state 永远无合法牌（isDeadlock=true）
-  - [ ] **`(null, null, *)` 状态恒 isDeadlock=false**（合法位扩展守卫触发）
-  - [ ] **`(C, null, *)` 状态 OptionCount=5 时部分位用合法池补**（守卫触发但不一定全替换）
-  - [ ] `WildAppearRate=1` 时永远塞 1 张王牌
-  - [ ] 王牌不算入合法/非法牌池（用 mock 验证 deck 抽样不返回 Wild）
-  - [ ] 大样本统计：固定 seed 跑 N 次，验证概率收敛于配置值（一般 state 下）
+- [x] `class HackDifficultyConfig`：`OptionCount` / `TargetChainCount` / `TotalTime` / `SolvableRate` / `WildAppearRate` 五字段
+- [x] `internal class OptionGenerator`（或同等命名）：
+  - [x] `Generate(state, config, random) → (CardData[] options, bool isDeadlock)`
+  - [x] deck 构成：40 Number + 8 Reverse = 48 张逻辑牌池，**王牌不进 deck**
+  - [x] `SolvableRate` 决定是否抽 1 张合法牌（下界语义）
+  - [x] `WildAppearRate` 独立判定塞王牌
+  - [x] 剩余位填非法牌
+  - [x] **合法位扩展守卫**：非法池规模 < 所需非法位数时，缺口转为合法位
+  - [x] 选项内不重复（同轮）
+  - [x] `Empty` 永不出现在选项中
+  - [x] 反转牌不强塞，仅作为合法/非法牌候选自然出现
+  - [x] **选项数组洗牌**（Fisher-Yates，与 GAME_DESIGN 3.5.4 对应）
+- [x] 抽样池：48 张牌的逻辑代表（`OptionGenerator.Deck` 静态缓存，每色每数字 1 张 Number + 每色 2 张 Reverse）
+- [x] 注入式随机源（`System.Random`）便于测试
+- [x] xUnit 覆盖：
+  - [x] 选项数量始终 = `OptionCount`
+  - [x] 选项内不重复
+  - [x] `Empty` 不出现
+  - [x] `SolvableRate=1, WildAppearRate=0` 时永远有合法牌且无王牌
+  - [x] `SolvableRate=0, WildAppearRate=0` 时一般 state 永远无合法牌（isDeadlock=true）
+  - [x] **`(null, null, *)` 状态恒 isDeadlock=false**（合法位扩展守卫触发）
+  - [x] **`(C, null, *)` 状态边界**——OptionCount=5 时 illegalPool=36 充裕，守卫不触发；OptionCount=20 时触发兜底
+  - [x] `WildAppearRate=1` 时永远塞 1 张王牌
+  - [x] 王牌不算入合法/非法牌池（多 seed 验证 deck 抽样不返回 Wild）
+  - [x] 大样本统计：N=10000 跑 SolvableRate=0.5/0.7、WildRate=0.05，容差 ±3%
+  - [x] 固定 seed 可重放
+  - [x] 洗牌位置分布检测（弱断言）
+  - [x] state 不被修改（纯函数）
+
+### 验收数据
+- `dotnet build` → 0 警告、0 错误
+- `dotnet test` → **139 通过**、0 失败、0 跳过（109 旧 + 30 新）
+- `grep UnityEngine` → 0 匹配
+- `OptionGenerator.cs` 160 行，`HackDifficultyConfig.cs` 26 行，单文件 < 300 ✓
 
 ### 依赖
 Change 1（CardData）+ Change 2（IsValidNext 用于"合法/非法"判定）
