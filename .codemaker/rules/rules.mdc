@@ -115,11 +115,12 @@ public class XxxController : MonoBehaviour, IController
 | `Assets/_Project/Settings/` | URP 配置 |
 | `Assets/QFramework/` | QFramework 框架本体（路径硬编码，禁移动） |
 | `Assets/QFrameworkData/` | QFramework 运行时配置（路径硬编码，禁移动） |
-| `Assets/ThirdParty/<PackageName>/` | 第三方资产，**只读** |
+| `Assets/ThirdParty/<分类>/<PackageName>/` | 第三方资产，**只读**；二层分类规则见 `Docs/DEPENDENCIES.md`（Characters/Player、Characters/Enemy、Locomotion、Cloth、Environment、VFX、Audio、AI 等） |
+| `Assets/Gizmos/` | Unity 引擎保留路径，Editor 自动加载 Gizmo 图标（由 Behavior Designer 等资产包提供），**禁移动** |
 | `CardChainCore/` | .NET 8 控制台项目，开发期验收 Core 层 |
 | `Docs/` | 项目文档 |
 
-新增项目代码**只能**放 `Assets/_Project/Scripts/` 下对应子目录；第三方包导入后立刻移到 `Assets/ThirdParty/<PackageName>/`（QFramework 与 QFrameworkData 例外）。
+新增项目代码**只能**放 `Assets/_Project/Scripts/` 下对应子目录；第三方包导入后立刻移到 `Assets/ThirdParty/<分类>/<PackageName>/` 对应二层路径（QFramework / QFrameworkData / Gizmos 例外，路径硬编码不动）。
 
 ---
 

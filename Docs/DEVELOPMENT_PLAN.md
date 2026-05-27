@@ -54,10 +54,10 @@ Phase 6  打磨与验证（A+B）
 - [x] **验证 CombatGirls 动画能否 Retarget 到 Starter Assets 骨骼**：结论 **方案B**，两者均 Humanoid Rig，Mecanim 自动重定向；需在 Phase 2 添加上半身动画层
 - [x] 提交初始 Unity 工程
 - [x] 导入剩余第三方资产：Behavior Designer / Mech Pack / Sci fi 2in1 / FORGE3D Sci-Fi Effects / Sci-Fi Weapons-Bullet Hell SFX
-- [ ] 第三方资产二层目录整理（含已有三包 CombatGirls / StarterAssets / MagicaCloth2 同步迁移；`Assets/Gizmos/` 例外不动），详见 change `phase0-third-party-assets-validate`
-- [ ] 第三方资产 URP 材质兼容性检查（Mech Pack / SciFiArena / SciFiEffects 三个高风险包）
-- [ ] 第三方资产 B 档最小可用性验证（5 个 Sandbox 场景，每包跑通最小 demo，不接业务）
-- [ ] 敲定敌人 BT 框架选型 = Opsive Behavior Designer（已导入并验证），同步 `DEPENDENCIES.md` 与 Phase 2.3 C2 任务行
+- [x] 第三方资产二层目录整理（含已有三包 CombatGirls / StarterAssets / MagicaCloth2 同步迁移；`Assets/Gizmos/` 例外不动），详见 change `phase0-third-party-assets-validate`
+- [x] 第三方资产 URP 材质兼容性检查（Mech Pack / SciFiArena / SciFiEffects 三个高风险包）
+- [x] 第三方资产 B 档最小可用性验证（5 个 Sandbox 场景，每包跑通最小 demo，不接业务）
+- [x] 敲定敌人 BT 框架选型 = Opsive Behavior Designer（已导入并验证），同步 `DEPENDENCIES.md` 与 Phase 2.3 C2 任务行
 
 ---
 
@@ -123,8 +123,8 @@ Phase 6  打磨与验证（A+B）
 
 ### 架构规范（本 Phase 全局约束）
 - **QF 骨架先行**：所有业务逻辑模块开发前，先完成 Phase 2.0 QF 架构骨架注册；后续各 Phase 的 System/Model/Command 直接在骨架上追加，**禁止**绕过 QF 在 MonoBehaviour 间直接调用业务逻辑
-- 敌人模型尚未选定（在 Unity Asset Store 挑选中），Phase 2.3 先用 Capsule + 动画占位，模型到位后替换
-- 敌人 AI 采用 **Behavior Tree**（Unity 6 内置包 `com.unity.behavior` 或等效方案，选型在 Phase 2.3 敲定）
+- 敌人模型采用 Mech Pack（Phase 0 已导入到 `Assets/ThirdParty/Characters/Enemy/MechPack/`，含 mech_defender / mech_walker / robot_dog 三种）
+- 敌人 AI 采用 Opsive **Behavior Designer**（Phase 0 已导入到 `Assets/ThirdParty/AI/BehaviorDesigner/`，资产包形式不走 Package Manager）
 
 ---
 

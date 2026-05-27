@@ -111,14 +111,49 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 
 ## Asset Store 资产
 
+### 目录组织约定
+
+第三方资产 SHALL 位于二层结构 `Assets/ThirdParty/<分类>/<PackageName>/` 下。`<分类>` 为按用途归类的一级目录，`<PackageName>` 为不含空格的 PascalCase 包名（拍平作者命名层）。
+
+| 分类 | 含义 | 示例包 |
+|------|------|--------|
+| `Characters/Player/` | 玩家角色模型 + 动画 | CombatGirls |
+| `Characters/Enemy/` | 敌人角色模型 + 动画 | MechPack |
+| `Locomotion/` | 角色控制器 / 移动 | StarterAssets |
+| `Cloth/` | 布料物理 | MagicaCloth2 |
+| `Environment/` | 场景 / 地图 | SciFiArena |
+| `VFX/` | 特效 / 粒子 | SciFiEffects |
+| `Audio/` | 音效 / BGM | SciFiWeaponsBulletHell |
+| `AI/` | AI 框架 / 资产 | BehaviorDesigner |
+
+**例外路径**（不属于 ThirdParty 二层结构覆盖范围）：
+
+| 路径 | 原因 |
+|------|------|
+| `Assets/QFramework/` | QFramework 框架本体路径硬编码 |
+| `Assets/QFrameworkData/` | QFramework 运行时配置路径硬编码 |
+| `Assets/Gizmos/` | Unity 引擎保留路径，Editor 自动从该目录加载 Gizmo 图标（由 Behavior Designer 等资产包提供运行时 Gizmo 资源） |
+| `Assets/StreamingAssets/` | Unity 引擎保留路径 |
+| `Assets/Screenshots/` | 项目截图存放目录 |
+
+### 资产清单
+
 | 资产名 | 用途 | 目标目录 | 状态 |
 |--------|------|---------|------|
-| CombatGirls - RifleCharacterPack | 玩家角色模型+动画 | `Assets/ThirdParty/CombatGirls/` | ✅ 已验证-方案B |
-| Starter Assets - Third Person Controller | TPS控制器基础 | `Assets/ThirdParty/StarterAssets/` | ✅ 已验证-方案B |
-| MagicaCloth2 | CombatGirls 布料物理依赖 | `Assets/ThirdParty/MagicaCloth2/` | ✅ 已导入 |
-| 怪物模型+动画（待填写） | 敌人 | `Assets/ThirdParty/Monsters/` | 待填写 |
-| 场景/地图（待填写） | 竞技场场景 | `Assets/ThirdParty/Environment/` | 待填写 |
-| 科幻VFX特效包（待填写） | 命中/受击/骇入特效 | `Assets/ThirdParty/VFX/` | 待填写 |
+| CombatGirls - RifleCharacterPack | 玩家角色模型+动画 | `Assets/ThirdParty/Characters/Player/CombatGirls/` | ✅ 已验证-方案B |
+| Starter Assets - Third Person Controller | TPS控制器基础 | `Assets/ThirdParty/Locomotion/StarterAssets/` | ✅ 已验证-方案B |
+| MagicaCloth2 | CombatGirls 布料物理依赖 | `Assets/ThirdParty/Cloth/MagicaCloth2/` | ✅ 已导入 |
+| MechPack | 敌人角色模型 + 动画（mech_defender / mech_walker / robot_dog） | `Assets/ThirdParty/Characters/Enemy/MechPack/` | ✅ 已迁移-URP 转换 3 mat |
+| SciFiArena (Sci fi 2in1) | 竞技场场景（含 Arena 1 / Arena 2 两套） | `Assets/ThirdParty/Environment/SciFiArena/` | ✅ 已迁移-材质 URP 兼容 |
+| SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失登记遗留 |
+| SciFiWeaponsBulletHell | 科幻武器音效（射击 / 爆炸 / UI） | `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/` | ✅ 已迁移 |
+| BehaviorDesigner (Opsive) | 敌人 AI Behavior Tree 框架 | `Assets/ThirdParty/AI/BehaviorDesigner/` | ✅ 已迁移-Sandbox demo |
+
+### 状态语义
+
+- ✅ **已验证-方案B**：`phase0-cleanup-and-validate` 期完成 URP 转换 + Retarget 验证
+- ✅ **已迁移-...**：`phase0-third-party-assets-validate` 期完成二层目录迁移与对应处理
+- ⚠ **已迁移-... 登记遗留**：迁移完成但有 Phase 6 待处理项（详见对应 change tasks.md 的"遗留项"段）
 
 ---
 
