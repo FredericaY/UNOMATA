@@ -145,7 +145,7 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 | MagicaCloth2 | CombatGirls 布料物理依赖 | `Assets/ThirdParty/Cloth/MagicaCloth2/` | ✅ 已导入 |
 | MechPack | 敌人角色模型 + 动画（mech_defender / mech_walker / robot_dog） | `Assets/ThirdParty/Characters/Enemy/MechPack/` | ✅ 已迁移-URP 转换 3 mat |
 | SciFiArena (Sci fi 2in1) | 竞技场场景（含 Arena 1 / Arena 2 两套） | `Assets/ThirdParty/Environment/SciFiArena/` | ✅ 已迁移-材质 URP 兼容 |
-| SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失登记遗留 |
+| SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失 + FORGE3D 框架依赖（详见下方注） |
 | SciFiWeaponsBulletHell | 科幻武器音效（射击 / 爆炸 / UI） | `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/` | ✅ 已迁移 |
 | BehaviorDesigner (Opsive) | 敌人 AI Behavior Tree 框架 | `Assets/ThirdParty/AI/BehaviorDesigner/` | ✅ 已迁移-Sandbox demo |
 
@@ -154,6 +154,28 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 - ✅ **已验证-方案B**：`phase0-cleanup-and-validate` 期完成 URP 转换 + Retarget 验证
 - ✅ **已迁移-...**：`phase0-third-party-assets-validate` 期完成二层目录迁移与对应处理
 - ⚠ **已迁移-... 登记遗留**：迁移完成但有 Phase 6 待处理项（详见对应 change tasks.md 的"遗留项"段）
+
+### SciFiEffects（FORGE3D）特别说明
+
+> Phase 2.3 战斗特效集成前必读。
+
+**问题 1：FORGE3D 自驱动 prefab 依赖 F3DTime / PoolManager 单例**
+
+包内挂载 `FORGE3D.F3D*` 自驱动脚本的 prefab（如 `Lightning Gun` / `Plasma Beam` / `Rail Gun` / `Warp Jump` / `Seeker Bolt` / `Pulsewave` / `Laser Impulse` / `Missiles` 主驱动等）依赖 `F3DTime.time` 与 `PoolManager` 单例。**独立场景内 Play 会触发 `NullReferenceException at F3DLightning.OnSpawned`**。
+
+**集成方案三选一**：
+
+1. 在 GameApp 启动时初始化 `F3DTime` 与 `PoolManager` 单例（场景里挂一个 `F3DTime` 组件 + `PoolManager` 组件即可）
+2. 从包内 `Examples/` 场景拷贝完整启动器 prefab 作为初始化参考
+3. **只挑用纯 `ParticleSystem` 自包含的 prefab**（推荐 Phase 2.3 起步）：
+   - `Plasma Gun/` / `Flames/` / `Shot Gun/` / `Sniper/` / `Solo Gun/` / `Trails/` / `Vulcan/` / `Missiles/MissileFlame.prefab` / `Missiles/MissileSmokeTrail.prefab` 等不含 FORGE3D 脚本的 prefab
+
+**问题 2：19 个材质 Shader 缺失**
+
+包使用 Amplify Shader Editor 生成的 Shader 在 Unity 2022.3 + URP 14 下未能正常 import，对应 19 个材质回退为 `Hidden/InternalErrorShader`。涉及子模块：Burnout / Debris / Explosions/Shock_Ring / Heat / Holographic / Nebula / Warp Tunnel / Legacy Turret。
+
+**修复方案**：用 Unity Shader Graph 重写 / 直接换 URP `Particles/Lit` 系列 / 影响范围窄的（如 Nebula 副本）直接删除。Phase 6 打磨期处理。Sandbox 验证选用的特效 prefab 已避开这 19 mat 引用。
+
 
 ---
 
