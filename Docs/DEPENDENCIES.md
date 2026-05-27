@@ -125,6 +125,7 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 | `VFX/` | 特效 / 粒子 | SciFiEffects |
 | `Audio/` | 音效 / BGM | SciFiWeaponsBulletHell |
 | `AI/` | AI 框架 / 资产 | BehaviorDesigner |
+| `UI/` | HUD / 副线 UI / 主菜单等表现层资产 | （Phase 3 前选型，待补） |
 
 **例外路径**（不属于 ThirdParty 二层结构覆盖范围）：
 
@@ -148,12 +149,36 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 | SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失 + FORGE3D 框架依赖（详见下方注） |
 | SciFiWeaponsBulletHell | 科幻武器音效（射击 / 爆炸 / UI） | `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/` | ✅ 已迁移 |
 | BehaviorDesigner (Opsive) | 敌人 AI Behavior Tree 框架 | `Assets/ThirdParty/AI/BehaviorDesigner/` | ✅ 已迁移-Sandbox demo |
+| UI 包（待选） | HUD / 副线接龙 UI / 骇入面板 / 主菜单 / 结算等表现层素材 | `Assets/ThirdParty/UI/<PackageName>/` | ⏳ Phase 3 副线 UI 阶段前选型；当前用 Unity 原生 UGUI / TMP 占位 |
 
 ### 状态语义
 
 - ✅ **已验证-方案B**：`phase0-cleanup-and-validate` 期完成 URP 转换 + Retarget 验证
 - ✅ **已迁移-...**：`phase0-third-party-assets-validate` 期完成二层目录迁移与对应处理
 - ⚠ **已迁移-... 登记遗留**：迁移完成但有 Phase 6 待处理项（详见对应 change tasks.md 的"遗留项"段）
+- ⏳ **待选型**：尚未挑选具体资产包，规划阶段占位条目
+
+### UI 资产选型待办（Phase 3 前）
+
+> 副线 UI（接龙小游戏 / 骇入面板）是 Phase 3 的核心交付，需要在 Phase 2 收尾前敲定 UI 资产方案。
+
+**预期素材范围**：
+
+- HUD：HP / 充能 / 弹药 / 准星 / 提示文字
+- 骇入面板：4 张牌容器、计时圈、当前牌指示、连接动画
+- 主菜单 / 暂停 / 结算 / 设置
+- 字体（中文 + 英文）
+
+**候选方向**（决策时再细评）：
+
+1. **DOTween + Unity UGUI + 自绘 sprite** —— 零成本，全手撸；适合美术资源由队友自行整理的小项目
+2. **Asset Store 科幻 UI 包**（如 `Sci-Fi GUI Pack` / `Cyberpunk UI Kit` / `HUD Toolkit` 等） —— 节省美术成本，与现有 SciFi 题材契合
+3. **Modern Procedural UI**（Shader Graph 驱动） —— 自定义灵活但开发量大，与本期 SciFiEffects 风格统一可加分
+
+**敲定时机**：Phase 2 TPS 主线收尾之后、Phase 3 副线 UI 任务起手之前。届时新建 change `phase3-ui-assets-import` 走完整 propose 流程。
+
+**当前状态**：用 Unity 原生 UGUI + TMP 占位（如果 Phase 2 期间需要 HUD 雏形）。
+
 
 ### SciFiEffects（FORGE3D）特别说明
 
