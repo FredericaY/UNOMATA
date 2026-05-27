@@ -1,0 +1,164 @@
+fileFormatVersion: 2
+guid: 806eb769818d6364f93f1640513dc93d
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Bone_robot_dog_ass
+    100002: Bone_robot_dog_body
+    100004: Bone_robot_dog_help_01
+    100006: Bone_robot_dog_help_02
+    100008: Bone_robot_dog_help_03
+    100010: Bone_robot_dog_help_04
+    100012: Bone_robot_dog_jaw_l_01
+    100014: Bone_robot_dog_jaw_l_02
+    100016: Bone_robot_dog_jaw_r_01
+    100018: Bone_robot_dog_jaw_r_02
+    100020: Bone_robot_dog_lazer_01
+    100022: Bone_robot_dog_lazer_02
+    100024: Bone_robot_dog_lazer_03
+    100026: Bone_robot_dog_leg_down_l_01
+    100028: Bone_robot_dog_leg_down_l_02
+    100030: Bone_robot_dog_leg_down_r_01
+    100032: Bone_robot_dog_leg_down_r_02
+    100034: Bone_robot_dog_leg_up_l_01
+    100036: Bone_robot_dog_leg_up_l_02
+    100038: Bone_robot_dog_leg_up_r_01
+    100040: Bone_robot_dog_leg_up_r_02
+    100042: Bone_robot_dog_shoulder_down_l
+    100044: Bone_robot_dog_shoulder_down_r
+    100046: Bone_robot_dog_shoulder_up_l
+    100048: Bone_robot_dog_shoulder_up_r
+    100050: Bone_robot_dog_tail
+    100052: IK Chain001
+    100054: IK Chain002
+    100056: IK Chain003
+    100058: IK Chain004
+    100060: Point_body_robot_dog
+    100062: robot_dog
+    100064: //RootNode
+    100066: root_point_robot_dog
+    400000: Bone_robot_dog_ass
+    400002: Bone_robot_dog_body
+    400004: Bone_robot_dog_help_01
+    400006: Bone_robot_dog_help_02
+    400008: Bone_robot_dog_help_03
+    400010: Bone_robot_dog_help_04
+    400012: Bone_robot_dog_jaw_l_01
+    400014: Bone_robot_dog_jaw_l_02
+    400016: Bone_robot_dog_jaw_r_01
+    400018: Bone_robot_dog_jaw_r_02
+    400020: Bone_robot_dog_lazer_01
+    400022: Bone_robot_dog_lazer_02
+    400024: Bone_robot_dog_lazer_03
+    400026: Bone_robot_dog_leg_down_l_01
+    400028: Bone_robot_dog_leg_down_l_02
+    400030: Bone_robot_dog_leg_down_r_01
+    400032: Bone_robot_dog_leg_down_r_02
+    400034: Bone_robot_dog_leg_up_l_01
+    400036: Bone_robot_dog_leg_up_l_02
+    400038: Bone_robot_dog_leg_up_r_01
+    400040: Bone_robot_dog_leg_up_r_02
+    400042: Bone_robot_dog_shoulder_down_l
+    400044: Bone_robot_dog_shoulder_down_r
+    400046: Bone_robot_dog_shoulder_up_l
+    400048: Bone_robot_dog_shoulder_up_r
+    400050: Bone_robot_dog_tail
+    400052: IK Chain001
+    400054: IK Chain002
+    400056: IK Chain003
+    400058: IK Chain004
+    400060: Point_body_robot_dog
+    400062: //RootNode
+    400064: robot_dog
+    400066: root_point_robot_dog
+    2100000: robot_dog
+    4300000: robot_dog
+    7400000: robot_dog02
+    9500000: //RootNode
+    13700000: robot_dog
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 0.01
+    hasPreviousCalculatedGlobalScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -53,6 +53,11 @@ Phase 6  打磨与验证（A+B）
 - [x] 导入 Starter Assets Third Person Controller（已导入至 Assets/ThirdParty/StarterAssets/）
 - [x] **验证 CombatGirls 动画能否 Retarget 到 Starter Assets 骨骼**：结论 **方案B**，两者均 Humanoid Rig，Mecanim 自动重定向；需在 Phase 2 添加上半身动画层
 - [x] 提交初始 Unity 工程
+- [x] 导入剩余第三方资产：Behavior Designer / Mech Pack / Sci fi 2in1 / FORGE3D Sci-Fi Effects / Sci-Fi Weapons-Bullet Hell SFX
+- [ ] 第三方资产二层目录整理（含已有三包 CombatGirls / StarterAssets / MagicaCloth2 同步迁移；`Assets/Gizmos/` 例外不动），详见 change `phase0-third-party-assets-validate`
+- [ ] 第三方资产 URP 材质兼容性检查（Mech Pack / SciFiArena / SciFiEffects 三个高风险包）
+- [ ] 第三方资产 B 档最小可用性验证（5 个 Sandbox 场景，每包跑通最小 demo，不接业务）
+- [ ] 敲定敌人 BT 框架选型 = Opsive Behavior Designer（已导入并验证），同步 `DEPENDENCIES.md` 与 Phase 2.3 C2 任务行
 
 ---
 
@@ -211,11 +216,12 @@ Phase 6  打磨与验证（A+B）
 - [ ] 死亡处理：播放临时死亡效果，通知 WaveSystem 敌人已消灭，销毁 GameObject
 
 #### C2：敌人 AI（Behavior Tree）
-- [ ] 确认 BT 包方案（`com.unity.behavior` 或第三方），添加到 `Packages/manifest.json`，更新 `DEPENDENCIES.md`
+- [ ] BT 包：Opsive **Behavior Designer**（Phase 0 补充工作已导入并验证，位于 `Assets/ThirdParty/AI/BehaviorDesigner/`），无需走 Package Manager
 - [ ] 实现最小 BT：`Idle → Detect Player → Chase → Attack (Melee)` 状态
-  - Detect：球形 OverlapSphere 检测玩家距离
-  - Chase：直线追踪（无 NavMesh，Phase 6 可升级为 NavMesh）
-  - Attack：近战范围内定时普通攻击，调用 PlayerSystem 扣血
+  - Idle：内置 `Actions/Idle`
+  - Detect：内置 `Conditionals/Physics/`（OverlapSphere / Raycast）+ Tag/Layer 比较
+  - Chase：内置 `Tasks/Unity/NavMeshAgent/SetDestination` 或 `Transform/MoveTowards`（NavMesh 在 Phase 6 升级）
+  - Attack：自写一个 `MeleeAttack` Action（继承 Opsive `Action`），近战范围内定时调用 `this.SendCommand<DamagePlayerCommand>(damage)`
 - [ ] 攻击对玩家造成 HP 伤害（通过 `this.SendCommand<DamagePlayerCommand>(damage)`，不直接操作 PlayerModel）
 
 #### C3：波次管理器（对接 WaveSystem/WaveModel）
