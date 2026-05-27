@@ -1,4 +1,13 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "Unity China",
+      "url": "https://packages.unity.cn",
+      "scopes": [
+        "com.unity"
+      ]
+    }
+  ],
   "dependencies": {
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
     "com.unity.animation.rigging": "1.3.1",

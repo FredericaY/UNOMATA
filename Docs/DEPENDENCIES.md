@@ -25,6 +25,73 @@
 | Animation Rigging | Unity Registry | 瞄准IK |
 | Universal RP | Unity Registry | URP渲染管线 |
 
+### Package Registry 配置（国内镜像源）
+
+**决策日期**：2026-05-27
+**适用范围**：两人开发团队均位于国内
+**生效方式**：`Packages/manifest.json` 的 `scopedRegistries` 字段
+
+#### 为什么走镜像
+
+Unity 官方 registry（`packages.unity.com` / `download.packages.unity.com`）国内访问普遍 < 100 KB/s，首次拉取 19 个包（≈ 680 MB）耗时数十分钟到数小时。Unity 中国官方维护 `packages.unity.cn` 完整同步官方包，国内访问稳定 5~20 MB/s。
+
+**关键认知**：Unity Package Manager **不支持 registry 自动 fallback**——一个 scope 只会路由到一个 registry。所以无法"两个源都留着自动切"，必须二选一作为主源。
+
+#### manifest.json 配置
+
+`Packages/manifest.json` 顶层加 `scopedRegistries` 字段：
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "Unity China",
+      "url": "https://packages.unity.cn",
+      "scopes": [
+        "com.unity"
+      ]
+    }
+  ],
+  "dependencies": {
+    "...": "..."
+  }
+}
+```
+
+**scope 解析规则**：
+- `com.unity` 是**前缀匹配**，覆盖所有 `com.unity.*` 包（含 `com.unity.cinemachine` / `com.unity.inputsystem` 等）
+- 内置模块 `com.unity.modules.*`（如 `modules.animation`）不走 registry，引擎自带，不受影响
+- 第三方包 `com.coplaydev.unity-mcp`（GitHub git URL）不走 registry，直接 git clone，不受影响
+
+#### 镜像完整度
+
+`packages.unity.cn` 与 `packages.unity.com` **完整双向同步**所有 `com.unity.*` 命名空间包。本项目所需的全部 18 个 `com.unity.*` 包均可拉到。
+
+#### 应急回退（镜像不可用时）
+
+若 `packages.unity.cn` 临时挂掉，**临时**改 manifest 把 `scopedRegistries` 数组置空 `[]` 或整段删除，Unity 会回退到默认官方 registry。**用完改回**，不要把空配置提交到主分支。
+
+更稳妥的做法：本地新建 `Packages/manifest.local.json` 备份，临时切换时改 `manifest.json`，应急完毕后从 `manifest.local.json` 恢复。
+
+#### 验证走的是镜像
+
+打开 Unity → `Window → Package Manager` → 任选一个 `com.unity.*` 包 → 右侧 Details 面板的 `View documentation` 链接如果指向 `docs.unity.cn`（而不是 `docs.unity3d.com`），说明配置生效。
+
+或命令行检查：
+
+```powershell
+# 看 Unity 缓存的 _resolved.json，能看到每个包的 actual url
+Get-Content Packages\packages-lock.json | Select-String "packages.unity"
+```
+
+应看到 `packages.unity.cn` 路径。
+
+#### 异地协作注意
+
+若**未来有队员到境外**（如出差、留学）：
+- 短期：本地通过环境变量 `HTTPS_PROXY` 走代理，manifest 不动
+- 长期：评估是否需要拆分配置（不推荐——Unity 不支持 manifest 多 profile）
+
 ### QFramework 安装方式
 QFramework **未发布到 OpenUPM**，必须手动安装：
 
