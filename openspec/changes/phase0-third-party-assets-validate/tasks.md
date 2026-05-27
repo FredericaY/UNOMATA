@@ -37,16 +37,16 @@
 
 ## 5. 新进 5 包二层化迁移（保 GUID）
 
-- [ ] 5.1 把 `Assets/Behavior Designer/` 整体移动到 `Assets/ThirdParty/AI/BehaviorDesigner/`
-- [ ] 5.2 验证 Console 无红色错误，Behavior Designer 菜单（Tools → Behavior Designer）仍可打开
-- [ ] 5.3 把 `Assets/Mech Pack/` 整体移动到 `Assets/ThirdParty/Characters/Enemy/MechPack/`
-- [ ] 5.4 把 `Assets/Sci fi 2in1/` 整体移动到 `Assets/ThirdParty/Environment/SciFiArena/`（保留内部 Sci Fi Arena 1 / Sci Fi Arena 2 两套子目录）
-- [ ] 5.5 把 `Assets/FORGE3D/Sci-Fi Effects/` 整体移动到 `Assets/ThirdParty/VFX/SciFiEffects/`（拍平作者目录）
-- [ ] 5.6 删除空目录 `Assets/FORGE3D/`（如已空）
-- [ ] 5.7 把 `Assets/Sci-Fi Weapons-Bullet Hell Sound Effects Pack/` 整体移动到 `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/`
-- [ ] 5.8 确认 `Assets/Gizmos/` **保持原位**（Unity 引擎保留路径）
-- [ ] 5.9 整体目录扫描：`Assets/` 根目录除 `_Project / ThirdParty / QFramework / QFrameworkData / Gizmos / StreamingAssets / Screenshots` 外，无散落第三方包目录
-- [ ] 5.10 git commit "refactor: 新进 5 包迁入二层目录"
+- [x] 5.1 把 `Assets/Behavior Designer/` 整体移动到 `Assets/ThirdParty/AI/BehaviorDesigner/`
+- [x] 5.2 验证 Console 无红色错误，Behavior Designer 菜单（Tools → Behavior Designer）仍可打开
+- [x] 5.3 把 `Assets/Mech Pack/` 整体移动到 `Assets/ThirdParty/Characters/Enemy/MechPack/`
+- [x] 5.4 把 `Assets/Sci fi 2in1/` 整体移动到 `Assets/ThirdParty/Environment/SciFiArena/`（保留内部 Sci Fi Arena 1 / Sci Fi Arena 2 两套子目录）
+- [x] 5.5 把 `Assets/FORGE3D/Sci-Fi Effects/` 整体移动到 `Assets/ThirdParty/VFX/SciFiEffects/`（拍平作者目录）
+- [x] 5.6 删除空目录 `Assets/FORGE3D/`（如已空）
+- [x] 5.7 把 `Assets/Sci-Fi Weapons-Bullet Hell Sound Effects Pack/` 整体移动到 `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/`
+- [x] 5.8 确认 `Assets/Gizmos/` **保持原位**（Unity 引擎保留路径）
+- [x] 5.9 整体目录扫描：`Assets/` 根目录除 `_Project / ThirdParty / QFramework / QFrameworkData / Gizmos / StreamingAssets / Screenshots` 外，无散落第三方包目录
+- [x] 5.10 git commit "refactor: 新进 5 包迁入二层目录"
 
 ## 6. URP 材质兼容性检查
 
@@ -139,4 +139,27 @@
 
 > URP 转换不动的材质 / Shader 在此登记。本 change 完成时此段可为空，验收期发现的问题写入。
 
-- （待填写）
+### SciFiEffects 包：19 个材质 Shader 缺失
+
+来源：`Assets/ThirdParty/VFX/SciFiEffects/Sci-Fi Effects/Effects/` 子树
+
+包内使用 Amplify Shader Editor 生成的 Shader 在 Unity 2022.3 + URP 14.x 下未能正常 import，对应 19 个材质回退为 `Hidden/InternalErrorShader`。
+
+涉及子模块：
+
+- Burnout（1）：`Burnout_linear_Amplify.mat`
+- Debris（2）：`debris_junk 1.mat`、`debris_rock 1.mat`
+- Explosions（1）：`Shock_Ring.mat`
+- Heat（1）：`HeatWave_01.mat`
+- Holographic（3）：`Holographic_Blue_Amplify.mat` / `Green_Amplify.mat` / `Red_Amplify.mat`
+- Nebula（8）：`Nebula_Blue_001 1.mat` ~ `Pink_001 1.mat` ~ `Red_001 1.mat` ~ `Red_002 1.mat` ~ `Dust 1.mat` 等带 "1" 后缀副本
+- Warp Tunnel（3）：`warp_tunnel_001 1.mat` / `002 1.mat` / `distortion_001.mat`
+- Legacy Turret（1）：`Examples/Legacy Turret/Materials/Turret.mat`
+
+**Phase 6 处理建议**：
+
+1. 检查包是否提供 `Amplify Shader Editor` 依赖；如需要则评估是否引入此付费工具（不引入则下面任选其一）
+2. 用 Unity 自带 Shader Graph 或现成 URP/Particles/Lit 等 Shader 重写问题 Shader
+3. 影响范围窄的（如 Nebula 副本）可直接删除
+4. Sandbox_SciFiEffects 验证选用的代表性特效 prefab SHALL 避开上述 19 个 Mat 引用，确保 demo 可跑通
+
