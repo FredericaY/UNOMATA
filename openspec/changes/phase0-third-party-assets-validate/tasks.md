@@ -22,18 +22,18 @@
 
 > 每步迁移后立即 `AssetDatabase.Refresh()`，确认 Console 零红色错误后再做下一步；任何错误立即 git reset 并定位 GUID 断裂源。
 
-- [ ] 3.1 通过 unityMCP 把 `Assets/ThirdParty/CombatGirls/` 整体移动到 `Assets/ThirdParty/Characters/Player/CombatGirls/`
-- [ ] 3.2 验证 PlayerArmature 视觉模型引用未断裂（打开 SampleScene，PlayerArmature 子对象 RifleGirl 不报缺失引用）
-- [ ] 3.3 通过 unityMCP 把 `Assets/ThirdParty/StarterAssets/` 整体移动到 `Assets/ThirdParty/Locomotion/StarterAssets/`
-- [ ] 3.4 验证 SampleScene 中 PlayerArmature 的 ThirdPersonController 脚本与 Animator Controller 引用未断裂
-- [ ] 3.5 通过 unityMCP 把 `Assets/ThirdParty/MagicaCloth2/` 整体移动到 `Assets/ThirdParty/Cloth/MagicaCloth2/`
-- [ ] 3.6 验证 RifleGirl 子对象 Rifle_Dress / Rifle_Jacket 上的 MagicaCloth2 组件引用未断裂
-- [ ] 3.7 git commit "refactor: 已有三包迁入二层目录"
+- [x] 3.1 通过 unityMCP 把 `Assets/ThirdParty/CombatGirls/` 整体移动到 `Assets/ThirdParty/Characters/Player/CombatGirls/`
+- [x] 3.2 验证 PlayerArmature 视觉模型引用未断裂（打开 SampleScene，PlayerArmature 子对象 RifleGirl 不报缺失引用）
+- [x] 3.3 通过 unityMCP 把 `Assets/ThirdParty/StarterAssets/` 整体移动到 `Assets/ThirdParty/Locomotion/StarterAssets/`
+- [x] 3.4 验证 SampleScene 中 PlayerArmature 的 ThirdPersonController 脚本与 Animator Controller 引用未断裂
+- [x] 3.5 通过 unityMCP 把 `Assets/ThirdParty/MagicaCloth2/` 整体移动到 `Assets/ThirdParty/Cloth/MagicaCloth2/`
+- [x] 3.6 验证 RifleGirl 子对象 Rifle_Dress / Rifle_Jacket 上的 MagicaCloth2 组件引用未断裂
+- [x] 3.7 git commit "refactor: 已有三包迁入二层目录"
 
 ## 4. 删除空壳目录
 
-- [ ] 4.1 通过 unityMCP 删除 `Assets/ThirdParty/Monsters/`（已被 `Characters/Enemy/` 取代）
-- [ ] 4.2 删除其他遗留空壳（如旧 `Assets/ThirdParty/CombatGirls/` 等迁移源目录）
+- [x] 4.1 通过 unityMCP 删除 `Assets/ThirdParty/Monsters/`（已被 `Characters/Enemy/` 取代）
+- [x] 4.2 删除其他遗留空壳（如旧 `Assets/ThirdParty/CombatGirls/` 等迁移源目录）
 
 ## 5. 新进 5 包二层化迁移（保 GUID）
 
