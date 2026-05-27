@@ -106,7 +106,7 @@
 - [x] 12.3 在 Behavior Designer 编辑器中编辑该 GameObject 的 BT：Sequence → Idle (Wait 1s) → Log("BT tick OK")
 - [x] 12.4 Save BT 与场景
 - [x] 12.5 Play Mode 验证：BT 正常 tick、Log 输出"BT tick OK"、Console 零红色错误
-- [ ] 12.6 git commit "test: 第三方资产 5 个 Sandbox 验证场景"
+- [x] 12.6 git commit "test: 第三方资产 5 个 Sandbox 验证场景"
 
 ## 13. 文档同步：DEPENDENCIES.md
 
@@ -128,12 +128,12 @@
 
 ## 16. 终验
 
-- [ ] 16.1 Unity Console 零红色错误
-- [ ] 16.2 5 个 Sandbox 场景每个 Play Mode 跑通且符合预期
-- [ ] 16.3 `Assets/` 根目录除 `_Project / ThirdParty / QFramework / QFrameworkData / Gizmos / StreamingAssets / Screenshots` 外，无散落第三方包目录
-- [ ] 16.4 `Docs/DEPENDENCIES.md` 资产表所有条目状态列填写完整
-- [ ] 16.5 运行 `openspec validate phase0-third-party-assets-validate --strict`，输出零错误
-- [ ] 16.6 git commit "docs: 第三方资产整理与可用性验证落地"
+- [x] 16.1 Unity Console 零红色错误
+- [x] 16.2 5 个 Sandbox 场景每个 Play Mode 跑通且符合预期
+- [x] 16.3 `Assets/` 根目录除 `_Project / ThirdParty / QFramework / QFrameworkData / Gizmos / StreamingAssets / Screenshots` 外，无散落第三方包目录
+- [x] 16.4 `Docs/DEPENDENCIES.md` 资产表所有条目状态列填写完整
+- [x] 16.5 运行 `openspec validate phase0-third-party-assets-validate --strict`，输出零错误
+- [x] 16.6 git commit "docs: 第三方资产整理与可用性验证落地"
 
 ## 遗留项（Phase 6 打磨期处理）
 
