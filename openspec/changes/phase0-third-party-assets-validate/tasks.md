@@ -1,22 +1,22 @@
 ## 1. 准备：Unity 状态确认与分支
 
-- [ ] 1.1 确认 Unity Editor 已打开当前项目，且**处于非 Play Mode**
-- [ ] 1.2 创建工作分支 `feat/phase0-third-party-assets-validate`
-- [ ] 1.3 在 Unity 中保存当前所有未保存场景，避免迁移时丢失改动
-- [ ] 1.4 git commit 当前状态作为基线（"chore: baseline before third-party asset reorg"）
+- [x] 1.1 确认 Unity Editor 已打开当前项目，且**处于非 Play Mode**
+- [x] 1.2 创建工作分支 `feat/phase0-third-party-assets-validate`
+- [x] 1.3 在 Unity 中保存当前所有未保存场景，避免迁移时丢失改动
+- [x] 1.4 git commit 当前状态作为基线（"chore: baseline before third-party asset reorg"）
 
 ## 2. 创建二层分类壳目录
 
 > 全部通过 unityMCP 的 `manage_asset` 在 `Assets/ThirdParty/` 下创建空文件夹（带 .meta），保证 GUID 注册。
 
-- [ ] 2.1 创建 `Assets/ThirdParty/Characters/`
-- [ ] 2.2 创建 `Assets/ThirdParty/Characters/Player/`
-- [ ] 2.3 创建 `Assets/ThirdParty/Characters/Enemy/`
-- [ ] 2.4 创建 `Assets/ThirdParty/Locomotion/`
-- [ ] 2.5 创建 `Assets/ThirdParty/Cloth/`
-- [ ] 2.6 创建 `Assets/ThirdParty/Audio/`
-- [ ] 2.7 创建 `Assets/ThirdParty/AI/`
-- [ ] 2.8 验证 `Assets/ThirdParty/Environment/` 与 `Assets/ThirdParty/VFX/` 已存在（`phase0-cleanup-and-validate` 已创建），如不存在则补建
+- [x] 2.1 创建 `Assets/ThirdParty/Characters/`
+- [x] 2.2 创建 `Assets/ThirdParty/Characters/Player/`
+- [x] 2.3 创建 `Assets/ThirdParty/Characters/Enemy/`
+- [x] 2.4 创建 `Assets/ThirdParty/Locomotion/`
+- [x] 2.5 创建 `Assets/ThirdParty/Cloth/`
+- [x] 2.6 创建 `Assets/ThirdParty/Audio/`
+- [x] 2.7 创建 `Assets/ThirdParty/AI/`
+- [x] 2.8 验证 `Assets/ThirdParty/Environment/` 与 `Assets/ThirdParty/VFX/` 已存在（`phase0-cleanup-and-validate` 已创建），如不存在则补建
 
 ## 3. 已有三包二层化迁移（保 GUID）
 
