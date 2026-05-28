@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 711a2af0b4d844b47ad8942d0114c502
 ModelImporter:
-  serializedVersion: 21300
+  serializedVersion: 22200
   internalIDToNameTable:
   - first:
       74: -7614703449353396500
@@ -38,7 +38,7 @@ ModelImporter:
     - serializedVersion: 16
       name: Run
       takeName: R@Run
-      internalID: 0
+      internalID: -7614703449353396500
       firstFrame: 0
       lastFrame: 20
       wrapMode: 0
@@ -215,6 +215,7 @@ ModelImporter:
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
+    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 0
@@ -242,6 +243,7 @@ ModelImporter:
     secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -1018,12 +1020,14 @@ ModelImporter:
     hasTranslationDoF: 0
     hasExtraRoot: 1
     skeletonHasParents: 1
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: c0426d61788399a4aa9702989176ee68, type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: c0426d61788399a4aa9702989176ee68,
+    type: 3}
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 3
   humanoidOversampling: 1
   avatarSetup: 2
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 0
   remapMaterialsIfMaterialImportModeIsNone: 0
   additionalBone: 0
   userData: 
