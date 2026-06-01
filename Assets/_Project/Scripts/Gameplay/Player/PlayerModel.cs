@@ -15,6 +15,9 @@ namespace Unomata.Gameplay
         /// <summary>玩家最大生命值，初始 100f。</summary>
         public BindableProperty<float> MaxHp = new BindableProperty<float>(100f);
 
+        /// <summary>玩家是否处于瞄准状态，由 PlayerSystem.SetAiming 写入。</summary>
+        public BindableProperty<bool> IsAiming = new BindableProperty<bool>(false);
+
         protected override void OnInit()
         {
             // BindableProperty 已在字段声明时初始化，此处无需额外操作。

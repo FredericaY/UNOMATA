@@ -10,10 +10,15 @@ namespace Unomata.Gameplay
     public class PlayerSystem : AbstractSystem
     {
         private PlayerModel _playerModel;
+        private PlayerInputModel _inputModel;
 
         protected override void OnInit()
         {
             _playerModel = this.GetModel<PlayerModel>();
+            _inputModel  = this.GetModel<PlayerInputModel>();
+
+            // 订阅输入 Model 的 IsAiming 变化，自动触发瞄准状态切换
+            _inputModel.IsAiming.Register(isAiming => SetAiming(isAiming));
         }
 
         /// <summary>
@@ -24,6 +29,16 @@ namespace Unomata.Gameplay
         public void TakeDamage(float raw)
         {
             _playerModel.HP.Value = Mathf.Max(0f, _playerModel.HP.Value - raw);
+        }
+
+        /// <summary>
+        /// 设置玩家瞄准状态，写入 Model 并广播 AimStateChangedEvent。
+        /// </summary>
+        /// <param name="isAiming">是否进入瞄准状态</param>
+        public void SetAiming(bool isAiming)
+        {
+            _playerModel.IsAiming.Value = isAiming;
+            this.SendEvent(new AimStateChangedEvent { IsAiming = isAiming });
         }
     }
 }

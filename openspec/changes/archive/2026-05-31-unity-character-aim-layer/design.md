@@ -24,11 +24,11 @@
 | Priority（默认） | 10 | 0 |
 | Priority（瞄准激活） | 10 | 15 |
 | FOV | 60 | 45 |
-| Shoulder Offset X | 0.4 | 0.35 |
+| Shoulder Offset X | 0.8 | 0.55 |
 | Shoulder Offset Y | 0.0 | 0.0 |
 | Shoulder Offset Z | 0.0 | 0.0 |
 | Vertical Arm Length | 0.3 | 0.2 |
-| Camera Distance | 4.5 | 2.8 |
+| Camera Distance | 2.8 | 1.8 |
 | Camera Radius | 0.2 | 0.2 |
 | Damping X / Y / Z | 0.1 / 0.2 / 0.1 | 0.05 / 0.1 / 0.05 |
 
@@ -73,13 +73,13 @@
 | X 轴参数 | `MoveX`（新增 float 参数，范围 -1~1） |
 | Y 轴参数 | `MoveY`（新增 float 参数，范围 -1~1） |
 
+> **方案 B（已实施）**：CombatGirls 无独立 R_AimWalk_L/R clip，采用 7 Motion 方案，2D Simple Directional 自动插值纯横移方向。若横移姿势偏转不自然，可补 (-1,0) = R_AimWalk_FL、(1,0) = R_AimWalk_FR 切回方案 A（9 Motion）。
+
 | Motion | Position (X, Y) |
 |--------|-----------------|
 | R_AimIdle | (0, 0) |
 | R_AimWalk_F | (0, 1) |
 | R_AimWalk_B | (0, -1) |
-| R_AimWalk_L（实为 FL/BL 中间值） | (-1, 0) |
-| R_AimWalk_R（实为 FR/BR 中间值） | (1, 0) |
 | R_AimWalk_FL | (-0.7, 0.7) |
 | R_AimWalk_FR | (0.7, 0.7) |
 | R_AimWalk_BL | (-0.7, -0.7) |

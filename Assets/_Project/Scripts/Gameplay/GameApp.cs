@@ -19,6 +19,7 @@ namespace Unomata.Gameplay
         {
             // ── Model 层（先于 System 注册）────────────────────────────
             this.RegisterModel<PlayerModel>(new PlayerModel());
+            this.RegisterModel<PlayerInputModel>(new PlayerInputModel());
             this.RegisterModel<WaveModel>(new WaveModel());
             this.RegisterModel<AudioModel>(new AudioModel());
 

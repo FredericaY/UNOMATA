@@ -143,8 +143,10 @@ B0(QF骨架)
   ├──→ B1a(模型换装)
   │      └──→ B1b.1(基础动画归属修复)
   │                └──→ B1b.2(瞄准动画层+双相机)
-  │                          └──→ B1b.3(输入QF化-Adapter方案)
-  │                                    └──→ B1c.1(脚步落地音补回)
+  │                          └──→ B1b.3(输入QF化-Adapter方案)✅
+  │                                    └──→ B1b.4(瞄准改IK-AnimRigging)←当前
+  │                                              └──→ B1c.1(脚步落地音补回)✅
+
   │                                              └──→ B1c.2(Audio QF化骨架)
   │                                                        └──→ B2a(射击Raycast)
   │                                                                  └──→ B2b(命中特效)
@@ -189,7 +191,10 @@ B0(QF骨架)
 
 ---
 
-## B1b.2 — `unity-character-aim-layer` ⬜ 待开始（依赖 B1b.1）
+## B1b.2 — `unity-character-aim-layer` ✅ 已归档 (2026-05-31)
+
+归档位置：`openspec/changes/archive/2026-05-31-unity-character-aim-layer/`
+
 
 **职责**：在 `UnomataPlayer.controller` 上新增 UpperBodyAim 动画层，实现瞄准模式下上半身动画叠加 + Cinemachine 双相机 Priority 切换。输入暂用临时驱动器，B1b.3 替换。
 
@@ -238,7 +243,12 @@ B1b.1（`UnomataPlayer.controller` 已就位且 Base Layer 已切 RifleGirl 动�
 
 ---
 
-## B1b.3 — `unity-player-input-qf-bridge` ⬜ 待开始（依赖 B1b.2）
+## B1b.3 — `unity-player-input-qf-bridge` ✅ 已归档 (2026-05-31)
+
+归档位置：`openspec/changes/archive/2026-05-31-unity-player-input-qf-bridge/`
+
+> 关键决策：上半身瞄准「手写 spine 叠加」方案调参困难、骨骼轴向错位，B1b.4 改用 Animation Rigging Multi-Aim IK 取代；下半身 StrafeController 死区迟滞保留。
+
 
 **职责**：把输入入口从 `StarterAssetsInputs` 接管到 QF 化的 `PlayerController`，让 Model 成为输入状态唯一来源。`StarterAssetsInputs` 退化为 Adapter，仅作为 ThirdPersonController.cs 的下游消费缓冲。
 
@@ -289,7 +299,31 @@ B1b.2
 
 ---
 
+## B1b.4 — `aim-ik-rig-constraint` 🔵 进行中（依赖 B1b.3）
+
+**职责**：把瞄准上半身朝向从「手写 spine 叠加」改为 Animation Rigging Multi-Aim Constraint IK（脊椎链瞄准 AimTarget，Rig 权重由 IsAiming 渐变）。下半身 StrafeController 死区迟滞保持不变。
+
+### 范围
+- [ ] `PlayerArmature` 加 `RigBuilder` + `AimRig`（MultiAimConstraint 链 Spine→Chest→UpperChest）+ `AimTarget` 子对象
+- [ ] 新建 `Player/AimTargetDriver.cs`：每帧 `AimTarget = 相机pos + 相机forward × 距离`
+- [ ] 改 `Player/AnimatorAimBridge.cs`：删 spine 叠加 + 4 个 bias 字段，改驱动 `Rig.weight` 渐变（保留 MoveX/Y 写入）
+- [ ] `StrafeController.cs` 不改
+
+### 目标手感
+进入瞄准下半身 snap 对齐相机 Yaw；俯仰仅上半身 IK 跟随、下半身竖直；静止小幅转视角只扭腰（脚不动），大幅转视角脚追身。
+
+### 依赖
+B1b.3
+
+### 风险点
+- Aimed Axis / World Up 标定（枪口偏）
+- 大俯仰脊椎翻转 → 角度限制 + pitch 限幅
+- IK 与持枪动画 pose 叠加冲突 → 权重链调试
+
+---
+
 ## B2a — `unity-shooting-raycast` ⬜ 待开始（依赖 B1c.2）
+
 
 **职责**：射击输入 + Raycast 命中检测 + 调用敌人受击接口。
 

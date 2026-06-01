@@ -143,7 +143,8 @@ Phase 6  打磨与验证（A+B）
 
 ---
 
-### Phase 2.1 — 角色控制器（方案B补丁，约 4 个 changes）
+### Phase 2.1 — 角色控制器（方案B补丁，约 5 个 changes）
+
 
 > **交付标准**：RifleGirl 模型在场景中正确运动，MagicaCloth2 布料物理正常，基础动画素材统一为 CombatGirls 风格，持枪上半身动画正确叠加，瞄准相机切换有效，输入入口 QF 化（Model 单一来源）
 
@@ -194,39 +195,42 @@ Phase 6  打磨与验证（A+B）
 - ~~走/跑/落地音效失声（SA 的脚步声依赖 fbx 内嵌 OnFootstep 事件，RifleGirl/FRA fbx 无此事件）→ 下一个 change 处理~~ → ✅ 已由 B1c.1 (`unity-character-footstep-events`) 解决（归档 2026-05-28）；跑步听感节奏不均问题转 B1c.2 治理
 - 跳跃手感仍有"别扭"感但无明显错误 → 详见 `Docs/AboutTheAnimation.md` "未来彻底解决的方向" 段
 
-#### B1b.2：上半身瞄准动画层 + 双相机切换（change: `unity-character-aim-layer`，待开始）
+#### B1b.2：上半身瞄准动画层 + 双相机切换 ✅ 已完成（change: `unity-character-aim-layer`，归档 2026-05-31）
 
 > 在 B1b.1 产出的 `UnomataPlayer.controller` 上新增 UpperBodyAim Layer + 接入 Cinemachine 双相机。输入暂用临时驱动器，B1b.3 替换。
 
 **Avatar Mask：**
-- [ ] 新建 `Assets/_Project/Animations/Player/UpperBody.mask`（Humanoid Mask，Spine 以上 + 双臂，下半身 + Root 不勾）
+- [x] 新建 `Assets/_Project/Animations/Player/UpperBody.mask`（Humanoid Mask，Spine 以上 + 双臂，下半身 + Root 不勾）
 
 **动画层（在 `UnomataPlayer.controller` 上扩展）：**
-- [ ] 新增 Layer `UpperBodyAim`：Override，Weight = 0，绑定 `UpperBody.mask`
-- [ ] 新增参数：`IsAiming` (bool)
-- [ ] `UpperBodyAim` 状态机：`Empty` ↔ `AimMove`（`IsAiming` 触发）；`AimMove` 含 9-motion 2D Cartesian BlendTree（`R_AimIdle` 中心 + 8 方向 `R_AimWalk_F/B/L/R/FL/FR/BL/BR`）
-- [ ] BlendTree 输入参数复用 base layer 移动参数（启动 change 前确认参数名）
-- [ ] Layer Weight 由脚本驱动（`Animator.SetLayerWeight` + `Mathf.MoveTowards`），约 0.15s 完成 0↔1
+- [x] 新增 Layer `UpperBodyAim`：Override，Weight = 0，绑定 `UpperBody.mask`
+- [x] 新增参数：`IsAiming` (bool) / `MoveX` (float) / `MoveY` (float)
+- [x] `UpperBodyAim` 状态机：`Empty` ↔ `AimMove`（`IsAiming` 触发）；`AimMove` 含 **7-motion 方案 B** 2D Simple Directional BlendTree（`R_AimIdle` 中心 + F/B/FL/FR/BL/BR；无独立 L/R clip，BlendTree 插值）
+- [x] BlendTree 输入参数：新增 `MoveX`/`MoveY`（非 base layer 参数）
+- [x] Layer Weight 由脚本驱动（`Animator.SetLayerWeight` + `Mathf.MoveTowards`），约 0.15s 完成 0↔1
 
 **Cinemachine 双相机：**
-- [ ] `PlayerFollowCamera`（已有，Priority = 10）保持不变
-- [ ] 新建 `PlayerAimCamera`（VirtualCamera，Priority = 0）：
-  - Body：Framing Transposer / 3rd Person Follow（依 Cinemachine 版本，B1b.2 启动前确认），右肩偏移（X ≈ 0.5）
-  - FOV = 40（Phase 5 平衡时调整）
-- [ ] `AimStateChangedEvent` 触发 `PlayerAimCamera.Priority = 15 / 0`，由 Brain 自动过渡
+- [x] `PlayerFollowCamera`（已有）调参：FOV=60，ShoulderOffset X=0.8，Distance=2.8
+- [x] 新建 `PlayerAimCamera`（VirtualCamera，Priority = 0）：Body=3rd Person Follow（Cinemachine 2.10.3），FOV=45，ShoulderOffset X=0.55，Distance=1.8
+- [x] `AimStateChangedEvent` 触发 `CameraAimBridge` → disable/Priority/enable 强制 Cinemachine 2.x mActiveCameras 重排
 
 **QF 数据流（不含输入入口）：**
-- [ ] `PlayerModel.IsAiming`（`BindableProperty<bool>`）
-- [ ] `SetAimStateCommand` → `PlayerSystem.SetAiming(bool)` → 写 Model + `SendEvent<AimStateChangedEvent>`
-- [ ] `AnimatorAimBridge` / `CameraAimBridge`（独立 MB，IController，订阅 Event）
-- [ ] 临时输入：`TempAimInputDriver`（读 `Input.GetMouseButton(1)` 发 Command，B1b.3 删除）
+- [x] `PlayerModel.IsAiming`（`BindableProperty<bool>`）
+- [x] `SetAimStateCommand` → `PlayerSystem.SetAiming(bool)` → 写 Model + `SendEvent<AimStateChangedEvent>`
+- [x] `AnimatorAimBridge` / `CameraAimBridge`（独立 MB，IController，订阅 Event）
+- [x] 临时输入：`TempAimInputDriver`（读 `Input.GetMouseButton(1)` 发 Command，B1b.3 删除）
 
 **Play Mode 验收：**
-- [ ] 普通移动/瞄准移动上半身动画正确叠加，下半身位移由 base layer 驱动
-- [ ] 双相机切换平滑无抖动
-- [ ] Console 零红色错误
+- [x] 普通移动/瞄准移动上半身动画正确叠加，下半身位移由 base layer 驱动
+- [x] 双相机切换平滑，越右肩构图（普通偏左，瞄准更偏左）
+- [x] Console 零红色错误
 
-#### B1b.3：输入入口 QF 化（change: `unity-player-input-qf-bridge`，待开始）
+**已知遗留（B1b.3 处理）：**
+- 瞄准时移动角色转身而非侧移（Strafe 朝向逻辑 = B1b.3 内容）
+- MoveX/Y 临时读 `Input.GetAxis`，B1b.3 改从 `PlayerInputModel` 读
+
+#### B1b.3：输入入口 QF 化（change: `unity-player-input-qf-bridge`）✅ 已归档 (2026-05-31)
+
 
 > 把输入入口从 `StarterAssetsInputs` 接管到 `PlayerController`，让 `PlayerInputModel` 成为状态唯一源。`StarterAssetsInputs` 退化为 Adapter 缓冲，不再绑 PlayerInput 回调。同时清理 B1b.2 的临时输入驱动器。
 
@@ -249,7 +253,27 @@ Phase 6  打磨与验证（A+B）
 - [ ] 临时禁用 `PlayerController` → 角色完全无响应（验证唯一入口）
 - [ ] B1b.2 视觉验收行为保持一致（动画层/双相机切换无回退）
 
-> **方案 B 补丁清单回顾**（原 Phase 0 验证结论）：两者均 Humanoid Rig，Mecanim 自动重定向；Phase 2.1 通过 B1a～B1b.3 四个 change 完整对接，把 PlayerArmature 从"骨架重定向 SA 动画 + SA 输入"过渡到"完整 RifleGirl 动画素材 + QF 化输入入口"。
+#### B1b.4：瞄准上半身改 Animation Rigging IK（change: `aim-ik-rig-constraint`）🔵 进行中
+
+> 把 B1b.2/B1b.3 落地的「手写 spine 叠加」瞄准上半身朝向（`AnimatorAimBridge.LateUpdate` 用 `Quaternion.AngleAxis` 在世界空间叠加 yaw/pitch + 多组 bias）改为 **Animation Rigging Multi-Aim Constraint IK**。根因：手写叠加调参困难、spine 骨骼 local 轴与世界轴错位、增量叠加破坏脊椎曲线，本质是在重新发明 IK。下半身 `StrafeController` 死区迟滞保留不动。
+
+**目标手感（TPS 标准）：**
+- 进入瞄准：下半身 snap 对齐相机 Yaw（StrafeController 现状），上半身 IK 权重渐入
+- Yaw：下半身死区迟滞 + 上半身 IK 补足残差（小幅转视角只扭腰、脚不动；大幅转视角脚追身、上半身回正）
+- Pitch：仅上半身 IK 跟随相机俯仰，下半身始终竖直
+
+- [ ] `PlayerArmature` 加 `RigBuilder` + `AimRig`（MultiAimConstraint 链 Spine→Chest→UpperChest）+ `AimTarget` 子对象
+- [ ] 新建 `Player/AimTargetDriver.cs`：每帧 `AimTarget = 瞄准相机 pos + forward × 距离`
+- [ ] 改 `Player/AnimatorAimBridge.cs`：删 spine 叠加 + 4 个 bias 字段，改驱动 `Rig.weight` 渐变（保留 MoveX/Y 写入）
+- [ ] `StrafeController.cs` 不改；依赖 `com.unity.animation.rigging` 1.3.1（已装）
+
+**Play Mode 验收：**
+- [ ] 进入瞄准枪口对准准星方向；俯仰上半身跟随、下半身竖直
+- [ ] 静止小幅转视角脚不动只扭腰、大幅转视角脚追身
+- [ ] Console 零红色错误
+
+> **方案 B 补丁清单回顾**（原 Phase 0 验证结论）：两者均 Humanoid Rig，Mecanim 自动重定向；Phase 2.1 通过 B1a～B1b.4 五个 change 完整对接，把 PlayerArmature 从"骨架重定向 SA 动画 + SA 输入"过渡到"完整 RifleGirl 动画素材 + QF 化输入入口 + Animation Rigging IK 瞄准"。
+
 
 ---
 
