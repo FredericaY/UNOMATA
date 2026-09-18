@@ -1,5 +1,7 @@
 # AboutTheAnimation — 角色基础动画疑难记录
 
+> 本文前半保留 2026-05 的基础动画历史。当前重启重点与瞄准验收见文末“2026-09-17 重启：瞄准与枪口方向”。历史“最终方案”仅指对应 change 的当时结论。
+
 > 本文档为 `unity-character-base-anim-swap`（B1b.1）apply 期遗留问题的备忘。当时把 SA 自带 Mecanim 通用动画换成 RifleGirl + FemaleRunnerAnimset (FRA) 系列素材，跳跃链路反复调试 7 轮才得到一个"无明显出错但仍有点别扭"的最终方案。本文记录所有诊断过程、各方案试错、最终配置、未来彻底解决的可行方向，等动画问题需要彻底优化时回来读。
 
 归档参考：`openspec/changes/archive/2026-05-28-unity-character-base-anim-swap/`（含 design.md D1~D10 详细决策、tasks.md Group 12~16 完整诊断 trace）。
@@ -280,3 +282,28 @@ B1c.1 apply 期发现：跑步听感节奏不均匀。诊断如下：
 ---
 
 _文档创建：2026-05-28，change `unity-character-base-anim-swap` 归档时_
+
+## 2026-09-17 重启：瞄准与枪口方向
+
+用户确认：当时人物瞄准动作和枪口朝向始终做不好，是搁置主因。当前 B1b.4 `aim-ik-rig-constraint` 保持活动，未完成最终验收。
+
+**已有尝试与当前起点**
+
+- 手写 spine yaw/pitch + 多套 bias 的方案因动画固定 pose、轴向和 idle/walk 差异难以校正，已切换为 Multi-Aim Constraint。
+- 历史记录显示约束曾因层级解析警告不起效；重挂 AimRig 后开始工作。这里只记录本模型的诊断，不将特定层级要求视为所有 Humanoid 的通用规则。
+- 当前代码：AnimatorAimBridge 驱动 UpperBodyAim 和 Rig 权重，AimTargetDriver 在 LateUpdate 更新目标，StrafeController 控制下半身 yaw。
+- SampleScene 中 Aim_Spine3 offset 当前为 `(-50, 20, -35)`，不同于历史“清零待标定”的尾注。该值仅为当前序列化事实，尚无通过记录。
+- 手骨 forward 与目标角度不等于枪口角度。重新标定前需先确定实际枪口位置/前向和参考轴。
+
+**下一轮诊断与验收步骤（尚未执行）**
+
+1. 使用固定相机、固定距离与正前方目标，记录枪口方向、Rig 权重、三段脊椎参数和 Console 警告；保留起始场景副本或可回退差异。
+2. 分别观察 Rig=0 与 Rig=1 的静止 pose，确认是约束未参与、轴向/offset 偏差，还是持枪姿态本身的偏差。
+3. 检查相机、AimTarget、Animator/PlayableGraph 和 Strafe 的实际求值顺序。DefaultExecutionOrder 不能单独证明 LateUpdate 早于动画图求值。
+4. 固定 yaw，检查中立及上下俯仰；固定 pitch，检查小幅死区内转向和大幅脚追身；观察是否扭曲、翻转或抖动。
+5. 对照 idle、前进、后退、斜向移动。一次只调整一个因素，记录前后结果；不要通过扩大偏移掩盖不同姿态的根因。
+6. 检查约 0.15 秒进入/退出渐变、连续瞄准切换，以及移动/跳跃/音频回归。
+7. 补输入禁用与重新启用验收：按住移动/瞄准时禁用 PlayerController，检查残留 Model 输入，重新启用后检查回调。Look 由适配器直通，单独记录其行为。
+8. 参数在 Edit Mode 保存并重新 Play 复核；Console 无新增未解释错误/警告，记录视图或视频。用户确认手感后才完成任务勾选、同步规格和归档。
+
+“无需手写 bias”不等于已证明 Multi-Aim 可以在所有姿态自动对齐枪口。若现有目标需武器/手臂约束或不同瞄准模型，先明确方案与范围，再更新活动变更；本轮不选择新实现。

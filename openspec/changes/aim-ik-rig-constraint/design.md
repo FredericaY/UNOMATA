@@ -82,3 +82,10 @@ PlayerInputModel.IsAiming ──RegisterEvent/Register──▶ AnimatorAimBridg
 - 删除 `AnimatorAimBridge` 的 spine 叠加代码块与 4 个 bias `SerializeField`。
 - 保留 MoveX/MoveY 写入（B1b.3 契约）与 Rig weight 渐变逻辑。
 - StrafeController 零改动。
+
+## 2026-09-17 恢复核对（未开始行为修改）
+
+- 原 D4 中“LateUpdate 早段可保证先于 Rig 求值”的推断尚无本轮运行证据。恢复时记录相机、目标、动画图与下半身覆盖的实际顺序，再决定是否改动。
+- 当前场景 Aim_Spine3 offset 为 (-50, 20, -35)，属于未验收标定值。
+- tasks 中“约束曾因层级不在 Animator hierarchy 而不生效”的记录是本模型的历史诊断，不作为所有 Humanoid 的通用约束。
+- proposal/specs 的枪口对齐目标保持；本轮仅补回 MODIFIED requirement 遗漏的两个已有场景，不表示行为已通过。

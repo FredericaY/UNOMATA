@@ -1,20 +1,42 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Language: Simplified Chinese. Write artifacts in Simplified Chinese.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Project: UNOMATA, a third-person arena shooter with a UNO-inspired hacking card chain.
+  Unity baseline: 2022.3.62f3, URP 14.0.12, QFramework source assets under Assets/QFramework.
+  Core source: CardChainCore/src/Unomata.Core, currently net8.0, no Unity dependencies.
+  Unity gameplay composition root: GameApp.Interface. Preserve QFramework state ownership and dependency direction.
+  Read root rules.md, Docs/TODO.md and relevant shared design, architecture, interfaces and dependencies.
+  Current implementation and recovery evidence are in Docs/PROJECT_REVIEW.md. Do not duplicate progress logs here.
+  Docs/INTERFACE.md includes planned APIs. Confirm implementation before using them.
+  Use Codex exclusively with AGENTS.md loading root rules.md; agent.md is a human-readable index. Personal Codex files and generated skills stay local. Existing tracked OpenSpec history stays tracked.
+  This workspace does not require assignee/reviewer registration to perform local maintenance.
+  Read the relevant project-local OpenSpec skill before executing its workflow.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - State the problem, scope, non-goals, affected modules, risks and visible impact.
+    - Preserve unresolved product decisions as TBD; do not silently select a rule or upgrade a dependency.
+  specs:
+    - Cover normal, boundary and failure paths with testable scenarios.
+    - Preserve existing scenarios when replacing a requirement; implementation mechanism may change within scope.
+    - Separate desired behavior from verified implementation and historical acceptance.
+  design:
+    - Record state ownership, QFramework layer, dependency direction, alternatives and verification strategy.
+    - Identify affected Unity scenes, prefabs, packages and shared documents.
+    - For Core integration, verify Unity compatibility and a single maintained source of truth.
+  tasks:
+    - Use small ordered tasks with explicit verification; check only after implementation and verification.
+    - Include affected shared documents and TODO synchronization; rules.md is excluded unless the user requested changes.
+
+operations:
+  apply:
+    guidance:
+      - Stay within the active change; update design and tasks before changing the approach.
+      - Do not count historical test results or archive state as current verification.
+  archive:
+    guidance:
+      - Require real acceptance, delta synchronization and affected documentation updates before archiving.
+      - Preserve historical records. Record missing historical acceptance in current documents rather than rewriting it.
+      - Never publish unfinished requirements as accepted main specs.

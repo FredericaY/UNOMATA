@@ -1,3 +1,11 @@
+# wave-system-scaffold Specification
+
+## Purpose
+
+定义波次编号、存活敌人数等 Model 数据及 WaveSystem 的空骨架接口，明确尚未实现的敌人生成和波次推进边界，为后续玩法变更提供可扩展且可核对的基础。
+
+## Requirements
+
 ### Requirement: WaveModel 数据结构
 
 `Unomata.Gameplay` 命名空间 SHALL 定义 `WaveModel` 类，继承 `AbstractModel`，包含以下两个公开属性：

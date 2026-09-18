@@ -26,6 +26,16 @@
 - **WHEN** Play Mode 下瞄准并按 W+A
 - **THEN** `Animator.GetFloat("MoveX")` 约 -1，`"MoveY"` 约 1（B1b.3 契约保持）
 
+#### Scenario: 静止死区内上半身扭腰跟枪
+
+- **WHEN** 瞄准静止，相机相对身体水平偏转约 8°（以死区 10° 为验收样本）
+- **THEN** 上半身（含双臂/武器）SHALL 由 IK 朝相机方向补偿该 yaw 残差，下半身 transform 保持不动；不得退回手写 spine 旋转
+
+#### Scenario: 上半身随相机俯仰、下半身不参与
+
+- **WHEN** 瞄准时相机在 ±50° 验收范围内上下俯仰
+- **THEN** 上半身 SHALL 由 IK 跟随该俯仰且无翻转，角色下半身 SHALL 保持竖直、不前倾后仰
+
 ## ADDED Requirements
 
 ### Requirement: 上半身 Aim Rig（Animation Rigging Multi-Aim Constraint 链）

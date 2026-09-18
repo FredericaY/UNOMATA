@@ -4,6 +4,23 @@
 > 两端开发必须严格遵守此约定，禁止绕过此文档直接跨层调用。
 > 接口变更需双方确认后更新本文档，再同步实现。
 
+## 实现状态与待澄清项（2026-09-17）
+
+本文主要保留目标契约，不能据此认为所有类型已经实现。
+
+| 状态 | 内容 |
+|---|---|
+| 已实现 | CardData、CardType、CardColor、ChainDirection、EndReason、ComboType、HackDifficultyConfig |
+| 已实现的内部逻辑 | SessionState、CardChainRules、OptionGenerator；均为 internal |
+| 尚未实现 | HackSession、HackResult、8 个会话事件、计时、奖励池、结束路径；TargetId / OnComboTriggered 仅为预留设计 |
+| 尚未接入 | Unity Core、HackSystem、Linking、骇入 UI |
+
+源码目前仅在 `CardChainCore/src/Unomata.Core/`。Core 无 `CardData.CanFollow()`。当前实现和数据流见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
+**实现 A5/A6 前必须确认**：本文的 `ChainCount / BasePot` 与 GAME_DESIGN 3.8“溢出充能不再影响 factor”存在矛盾；满档后 chain 若增长，现公式的 factor 也增长。另需将“骇入削减系数”与“敌人剩余减免率”区分，旧计划中的直接赋值并未实现，也不能当作已确认伤害公式。本轮保留原设计内容并登记冲突，不擅自选择玩法。
+
+旧文档的“接口冻结”表示当时计划，不构成已实现、无歧义或本轮已验收的证明。
+
 ---
 
 ## 一、架构边界

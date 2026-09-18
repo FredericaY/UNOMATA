@@ -1,3 +1,11 @@
+# cardchain-deck-generator Specification
+
+## Purpose
+
+定义难度配置和每轮选项生成的契约，覆盖有解概率、独立王牌出现、合法位补足、死局识别、选项去重与顺序随机化，使生成结果能够独立进行规则验证。
+
+## Requirements
+
 ### Requirement: HackDifficultyConfig 难度参数数据类
 
 系统 SHALL 提供 `HackDifficultyConfig` 公开数据类，承载单次骇入的难度参数。

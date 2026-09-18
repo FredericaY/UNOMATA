@@ -269,7 +269,6 @@ GameObject:
   - component: {fileID: 229206897}
   - component: {fileID: 229206896}
   - component: {fileID: 229206895}
-  - component: {fileID: 229206899}
   m_Layer: 0
   m_Name: Audio
   m_TagString: Untagged
@@ -511,18 +510,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &229206899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229206894}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1162665300}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &402335567 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3893294197879345259, guid: 64dce48905ffd9b4293e595fa6941544,
@@ -904,21 +891,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1064210760}
   m_PrefabAsset: {fileID: 0}
---- !u!115 &1162665300
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: UnRegisterOnDestroyTrigger
-  m_Namespace: QFramework
-  m_AssemblyName: QFramework
 --- !u!1 &1275809341
 GameObject:
   m_ObjectHideFlags: 0

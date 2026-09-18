@@ -1,3 +1,11 @@
+# cardchain-core-scaffold Specification
+
+## Purpose
+
+定义独立 Core 类库、xUnit 测试和控制台项目的目录布局、运行时目标与开发入口，使卡牌逻辑可以脱离 Unity 构建和验证，并为后续会话实现提供基础。
+
+## Requirements
+
 ### Requirement: 解决方案与项目布局
 
 `CardChainCore/` 目录 SHALL 包含一个 `CardChainCore.sln` 解决方案文件，并以 `src/` / `tests/` / `console/` 三段式组织三个项目：`src/Unomata.Core/`、`tests/Unomata.Core.Tests/`、`console/Unomata.Core.Console/`。`.gitkeep` 在脚手架建立后 SHALL 被删除。

@@ -2,7 +2,7 @@
 
 > Phase 2.1 · B1b.4
 > 前置：B1b.3 (`unity-player-input-qf-bridge`) 已归档 (2026-05-31)
-> 下游：B1c.1 → B1c.2 → B2a
+> 下游：B2a；B1c.1 / B1c.2 已于 2026-05-28 归档。
 
 ## Why
 

@@ -11,6 +11,7 @@ namespace Unomata.Gameplay
     {
         private PlayerModel _playerModel;
         private PlayerInputModel _inputModel;
+        private IUnRegister _aimSubscription;
 
         protected override void OnInit()
         {
@@ -18,7 +19,14 @@ namespace Unomata.Gameplay
             _inputModel  = this.GetModel<PlayerInputModel>();
 
             // 订阅输入 Model 的 IsAiming 变化，自动触发瞄准状态切换
-            _inputModel.IsAiming.Register(isAiming => SetAiming(isAiming));
+            _aimSubscription = _inputModel.IsAiming.Register(SetAiming);
+            SetAiming(_inputModel.IsAiming.Value);
+        }
+
+        protected override void OnDeinit()
+        {
+            _aimSubscription?.UnRegister();
+            _aimSubscription = null;
         }
 
         /// <summary>
@@ -37,6 +45,7 @@ namespace Unomata.Gameplay
         /// <param name="isAiming">是否进入瞄准状态</param>
         public void SetAiming(bool isAiming)
         {
+            if (_playerModel.IsAiming.Value == isAiming) return;
             _playerModel.IsAiming.Value = isAiming;
             this.SendEvent(new AimStateChangedEvent { IsAiming = isAiming });
         }

@@ -2,7 +2,8 @@
 
 > Phase 2.1 · B1b.4
 > 前置：B1b.3 (`unity-player-input-qf-bridge`) 已归档 (2026-05-31)
-> 下游：B1c.1 → B1c.2 → B2a
+> 下游：B2a；B1c.1 / B1c.2 已于 2026-05-28 归档，不再作为本 change 的未来下游。
+> 2026-09-17 重启：以下勾选是历史记录，本轮未重跑 Unity。用户确认搁置原因是瞄准动作和枪口朝向。当前场景 Aim_Spine3 offset 为 (-50, 20, -35)，需运行验证；本 change 保持活动，不提前归档。恢复入口见 Docs/PROJECT_REVIEW.md 与 Docs/AboutTheAnimation.md。
 
 ---
 
@@ -54,7 +55,7 @@
 
 ---
 
-## 6. 静态标定（Editor，非 Play）
+## 6. 固定姿态标定（Play Mode 验证；Edit Mode 保存参数）
 
 > 注：Animation Rigging 仅运行时（PlayableGraph）评估，Editor 非 Play 看不到 IK 效果，标定在 Play Mode 进行（见 7）。
 
@@ -112,3 +113,7 @@ Could not resolve 'PlayerArmature/AimRig/Aim_Spine1' because it is not a child T
 ### 剩余 TODO
 - [ ] 标定 `Aim_Spine3.Offset` 补掉持枪 pose 的左下固定偏移（用户自行在 Inspector 调）。
 - [ ] 死区分级：小幅转视角仅上半身 IK 扭腰、大幅转视角下半身追身（StrafeController 死区 + Rig 配合）。
+
+## 2026-09-18 后续边界
+
+用户接受“恢复到暂停前阶段”的项目基线，但明确瞄准动画仍有偏差，后续单独新建 change。本文保留原 22/37 的历史实现与未验收记录，不作为本次恢复的未完成任务，也不自动续作或当作已完成归档。后续新 change 应明确承接或替代关系。

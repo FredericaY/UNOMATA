@@ -1,3 +1,11 @@
+# third-party-asset-validation Specification
+
+## Purpose
+
+定义第三方资产在隔离 Sandbox 场景中的最小可用性、材质兼容性与引用检查标准，使模型、场景、音效、特效和行为树在接入业务前具有可追溯的验证依据。
+
+## Requirements
+
 ### Requirement: 每个第三方资产包必须通过最小可用性 Sandbox 场景验证
 
 每个新导入的第三方资产包 SHALL 通过一个独立的 `Sandbox_<PackageName>.unity` 场景进行 B 档最小可用性验证：场景中放入该包的代表性 prefab / 组件，进入 Play Mode 后 SHALL 在不接业务、不接 QFramework、不依赖其他 capability 的前提下展现"最小可见行为"，且 Unity Console 在 Play Mode 期间不出现红色错误。

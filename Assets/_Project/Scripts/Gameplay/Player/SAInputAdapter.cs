@@ -4,60 +4,137 @@ using UnityEngine.InputSystem;
 
 namespace Unomata.Gameplay
 {
-    /// <summary>
-    /// StarterAssetsInputs 适配器。
-    /// LateUpdate 单向将 PlayerInputModel 的值写入 StarterAssetsInputs，
-    /// 使 ThirdPersonController 无感知地继续读取 SA 字段。
-    ///
-    /// PlayerInput.Behavior = InvokeCSharpEvents 下，SendMessages 路由失效，
-    /// Look Action 需在此处手动订阅并直接 pass-through 到 _sai.look。
-    /// Look 不进入 PlayerInputModel（纯相机控制，无业务语义）。
-    /// </summary>
+    /// <summary>Prepares the vendor input buffer before movement and owns the separate Look route.</summary>
     [DefaultExecutionOrder(-10)]
     public class SAInputAdapter : MonoBehaviour
     {
         private PlayerInputModel _model;
+        private QFramework.IArchitecture _architecture;
         private StarterAssetsInputs _sai;
-        private InputAction _lookAction;
+        private PlayerInput _playerInput;
+        private InputActionAsset _asset, _attemptedAsset;
+        private InputActionMap _map;
+        private InputAction _look;
+        private bool _started, _focused = true, _validationFailed, _jumpWasPressed;
 
-        private void Start()
+        private void Awake()
         {
-            _model = GameApp.Interface.GetModel<PlayerInputModel>();
-            _sai   = GetComponent<StarterAssetsInputs>();
-
-            var pi = GetComponent<PlayerInput>();
-            if (pi != null)
-            {
-                _lookAction = pi.actions.FindAction("Look");
-                if (_lookAction != null)
-                {
-                    _lookAction.performed += OnLook;
-                    _lookAction.canceled  += OnLook;
-                }
-            }
+            _focused = Application.isFocused;
+            _sai = GetComponent<StarterAssetsInputs>();
+            _playerInput = GetComponent<PlayerInput>();
         }
 
-        private void OnDestroy()
+        private void OnEnable()
         {
-            if (_lookAction != null)
+            _validationFailed = false;
+            InputSystem.onActionChange += OnActionChange;
+            // Start/Update binds against the current player input state.
+        }
+
+        private void Start() { _started = true; MaintainBinding(); }
+
+        private void Update()
+        {
+            MaintainBinding();
+            if (_look == null) return;
+            _sai.move = _model.Move.Value;
+            _sai.sprint = _model.Sprint.Value;
+            bool pressed = _model.Jump.Value;
+            if (!pressed) _sai.jump = false;
+            else if (!_jumpWasPressed) _sai.jump = true;
+            _jumpWasPressed = pressed;
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            _focused = focused;
+            if (!focused) Suspend();
+            // Rebind in Update after focus has returned.
+        }
+
+        private void OnDisable()
+        {
+            InputSystem.onActionChange -= OnActionChange;
+            Suspend();
+        }
+
+        private void OnDestroy() { Suspend(); }
+
+        private bool SourceIsReady =>
+            _playerInput != null && _playerInput.isActiveAndEnabled && _playerInput.inputIsActive &&
+            _playerInput.actions == _asset && _playerInput.currentActionMap == _map &&
+            _map != null && _map.enabled && _look != null && _look.enabled;
+
+        private void MaintainBinding()
+        {
+            if (!_started || !isActiveAndEnabled || !_focused) { Suspend(); return; }
+            if (_look != null)
             {
-                _lookAction.performed -= OnLook;
-                _lookAction.canceled  -= OnLook;
+                if (SourceIsReady && _architecture != null &&
+                    ReferenceEquals(_architecture.GetModel<PlayerInputModel>(), _model)) return;
+                Suspend();
             }
+            var asset = _playerInput != null ? _playerInput.actions : null;
+            if (_validationFailed && asset == _attemptedAsset) return;
+            _attemptedAsset = asset;
+            var map = asset != null ? asset.FindActionMap(PlayerInputBinding.MapName) : null;
+            var look = map?.FindAction("Look");
+            if (_sai == null || _playerInput == null || map == null || look == null ||
+                look.type != InputActionType.Value || look.expectedControlType != "Vector2")
+            {
+                _validationFailed = true;
+                ClearBuffer();
+                Debug.LogError("[SAInputAdapter] Cannot bind '" + name +
+                    "': require StarterAssetsInputs, PlayerInput asset and Player/Look (Value/Vector2).", this);
+                return;
+            }
+            _validationFailed = false;
+            if (!_playerInput.isActiveAndEnabled || !_playerInput.inputIsActive ||
+                _playerInput.currentActionMap != map || !map.enabled || !look.enabled) return;
+            _architecture = GameApp.Interface;
+            _model = _architecture.GetModel<PlayerInputModel>();
+            _asset = asset; _map = map; _look = look;
+            _jumpWasPressed = _model.Jump.Value; // An already held button is not a new request.
+            look.performed += OnLook;
+            look.canceled += OnLook;
+            _sai.look = look.ReadValue<Vector2>();
+        }
+
+        private void OnActionChange(object changed, InputActionChange change)
+        {
+            if (_look == null) return;
+            bool owns = ReferenceEquals(changed, _map) || ReferenceEquals(changed, _asset) ||
+                        (changed is InputAction action && ReferenceEquals(action, _look));
+            if (owns && (change == InputActionChange.ActionDisabled ||
+                         change == InputActionChange.ActionMapDisabled ||
+                         change == InputActionChange.BoundControlsAboutToChange))
+                Suspend();
         }
 
         private void OnLook(InputAction.CallbackContext ctx)
         {
-            if (_sai == null) return;
-            _sai.look = ctx.performed ? ctx.ReadValue<Vector2>() : Vector2.zero;
+            if (!_focused || !isActiveAndEnabled || !SourceIsReady) { Suspend(); return; }
+            _sai.look = ctx.canceled ? Vector2.zero : ctx.ReadValue<Vector2>();
         }
 
-        private void LateUpdate()
+        private void Suspend()
         {
-            if (_model == null || _sai == null) return;
-            _sai.move   = _model.Move.Value;
-            _sai.jump   = _model.Jump.Value;
-            _sai.sprint = _model.Sprint.Value;
+            if (_look != null)
+            {
+                _look.performed -= OnLook;
+                _look.canceled -= OnLook;
+            }
+            _look = null; _map = null; _asset = null;
+            _jumpWasPressed = false;
+            ClearBuffer();
+        }
+
+        private void ClearBuffer()
+        {
+            if (_sai == null) return;
+            _sai.move = Vector2.zero;
+            _sai.look = Vector2.zero;
+            _sai.jump = _sai.sprint = false;
         }
     }
 }

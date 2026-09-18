@@ -1,3 +1,11 @@
+# cardchain-validator Specification
+
+## Purpose
+
+定义依赖会话颜色、数字和方向状态的接牌合法性判定与状态更新，明确数字牌、反转牌、王牌、开局空牌及边界行为，并将纯规则与 Unity 表现层分离。
+
+## Requirements
+
 ### Requirement: SessionState 结构
 
 `Unomata.Core` 命名空间 SHALL 在 `internal` 可见性下定义类 `SessionState`，包含且仅包含以下三个字段：

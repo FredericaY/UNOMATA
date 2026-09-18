@@ -1,3 +1,11 @@
+# cardchain-types Specification
+
+## Purpose
+
+定义接龙所需的卡牌类型、颜色、升降方向、结束原因与预留组合枚举，明确空牌和有效牌的数据约束，为合法性判定、选项生成和后续会话提供一致的数据基础。
+
+## Requirements
+
 ### Requirement: 卡牌类型枚举
 
 `Unomata.Core` 命名空间 SHALL 定义 `CardType` 枚举，恰好包含四个成员：`Number`、`Reverse`、`Wild`、`Empty`。语义如下：

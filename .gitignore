@@ -6,6 +6,20 @@
 # See: https://github.com/github/gitignore/tree/main/Global
 #
 .utmp/
+
+# New personal AI tooling stays local. Existing tracked OpenSpec/legacy
+# history is deliberately preserved; no index migration is implied.
+/AGENTS.md
+/agent.md
+/.cline/
+/.clinerules/
+/.codemaker/
+/AGENTS.override.md
+/rules.md
+/.agents/
+/.codex/
+/.mcp.json
+/.vscode/mcp.json
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/

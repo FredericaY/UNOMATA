@@ -4,7 +4,7 @@ namespace Unomata.Gameplay
 {
     /// <summary>
     /// 设置玩家瞄准状态命令。
-    /// 由 TempAimInputDriver（B1b.2）触发，B1b.3 后改由 PlayerController 触发。
+    /// 写入唯一的瞄准输入状态，由 PlayerSystem 订阅后同步业务状态和事件。
     /// </summary>
     public class SetAimStateCommand : AbstractCommand
     {
@@ -17,7 +17,7 @@ namespace Unomata.Gameplay
 
         protected override void OnExecute()
         {
-            this.GetSystem<PlayerSystem>().SetAiming(_isAiming);
+            this.GetModel<PlayerInputModel>().IsAiming.Value = _isAiming;
         }
     }
 }

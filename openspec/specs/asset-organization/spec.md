@@ -1,3 +1,11 @@
+# asset-organization Specification
+
+## Purpose
+
+规定项目自有资产与第三方包的目录边界、特殊保留路径、元数据配对和迁移要求，使工程整理后仍能追溯资产来源，并保持场景与预制体引用稳定。
+
+## Requirements
+
 ### Requirement: 第三方资产包位于规划目录
 
 所有通过 Asset Store 或手动导入的第三方资产包，均 SHALL 位于 `Assets/ThirdParty/<分类>/<PackageName>/` 二层目录下。`<分类>` 为按用途归类的一级目录（如 `Characters/Player`、`Characters/Enemy`、`Locomotion`、`Cloth`、`Environment`、`VFX`、`Audio`、`AI`），`<PackageName>` 为不含空格的 PascalCase 包名（拍平作者命名层）。

@@ -1,111 +1,48 @@
 # DEPENDENCIES.md — 依赖清单
 
-> 记录所有环境、包、资产依赖。两人开发环境需保持一致。
+> 记录工程环境、包与资产依赖。恢复时按当前锁定版本核对；历史验收不等于本轮复验。
 
 ---
 
-## 开发环境
+## 开发环境（2026-09-17 按工程文件核对）
 
-| 项目 | 版本 |
-|------|------|
-| Unity Editor | 2022.3.x LTS（最新补丁版本） |
-| 渲染管线 | Universal Render Pipeline (URP) |
-| .NET（CardChainCore） | .NET 8 |
-| IDE | Visual Studio 2022 / Rider（任选） |
+| 项目 | 基线 / 来源 |
+|---|---|
+| Unity Editor | **2022.3.62f3**，revision 96770f904ca7；见 ProjectSettings/ProjectVersion.txt |
+| Universal RP | **14.0.12** |
+| .NET（CardChainCore） | **.NET 8 SDK**；Directory.Build.props 的 TargetFramework=net8.0 |
+| QFramework | 历史导入记录为 1.0.187-Unity2018Compatible，源码资产位于 Assets/QFramework/；不在 manifest 依赖中 |
+| IDE | 按个人环境选择，不作为运行时依赖 |
 
----
+不自动升级 Editor 或依赖。原文“2022.3.x 最新补丁”已改为工程记录的精确版本。2026-09-17 首次盘点时缺少 SDK；后续已恢复 SDK 8.0.425，Core 构建与 139 项测试通过，Unity 也已连接并编译。首次 Play Mode 发现输入资产缺陷，见 [恢复记录](ENVIRONMENT_RECOVERY.md)。恢复命令见 [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md)。
 
-## Unity Package Manager
+## Unity 包基线
 
-| 包名 | 来源 | 用途 |
-|------|------|------|
-| QFramework | GitHub Release (unitypackage) | 项目架构框架，导入到 `Assets/QFramework/` |
-| Cinemachine | Unity Registry | TPS相机系统 |
-| Input System | Unity Registry | 新输入系统 |
-| Animation Rigging | Unity Registry | 瞄准IK |
-| Universal RP | Unity Registry | URP渲染管线 |
+下表来自 Packages/manifest.json；完整直接与传递依赖以 manifest 和 packages-lock.json 为准。
 
-### Package Registry 配置（国内镜像源）
+| 包 | 版本 / 来源 | 用途 |
+|---|---|---|
+| com.unity.cinemachine | 2.10.3 | TPS 相机 |
+| com.unity.inputsystem | 1.14.2 | 输入 |
+| com.unity.animation.rigging | 1.3.1 | 瞄准 IK |
+| com.unity.render-pipelines.universal | 14.0.12 | 渲染 |
+| com.unity.test-framework | 1.1.33 | Unity 测试 |
+| com.unity.textmeshpro | 3.0.7 | 文本 |
+| com.coplaydev.unity-mcp | Git URL 的 main 引用；lock hash 78ee5418415953b79c358bfe6355fcc3fde7912b | 编辑器工具连接 |
 
-**决策日期**：2026-05-27
-**适用范围**：两人开发团队均位于国内
-**生效方式**：`Packages/manifest.json` 的 `scopedRegistries` 字段
+MCP 包已经写入工程不等于当前会话已连接 MCP。后续已通过本机 MCP 服务核对并操作正确工程；项目级 Codex 连接配置本地保留。此次不修改锁文件或将 main 引用升级。依赖可重复性后续可单独评估固定引用。
 
-#### 为什么走镜像
+### 当前 Registry 配置
 
-Unity 官方 registry（`packages.unity.com` / `download.packages.unity.com`）国内访问普遍 < 100 KB/s，首次拉取 19 个包（≈ 680 MB）耗时数十分钟到数小时。Unity 中国官方维护 `packages.unity.cn` 完整同步官方包，国内访问稳定 5~20 MB/s。
+manifest 配置了名为 Unity China 的 scoped registry：`https://packages.unity.cn`，scope 为 `com.unity`。这是仓库现存配置，本轮未测量网络速度或镜像完整性；不再保留“全部同步”“固定下载速度”等未经本轮验证的保证。
 
-**关键认知**：Unity Package Manager **不支持 registry 自动 fallback**——一个 scope 只会路由到一个 registry。所以无法"两个源都留着自动切"，必须二选一作为主源。
-
-#### manifest.json 配置
-
-`Packages/manifest.json` 顶层加 `scopedRegistries` 字段：
-
-```json
-{
-  "scopedRegistries": [
-    {
-      "name": "Unity China",
-      "url": "https://packages.unity.cn",
-      "scopes": [
-        "com.unity"
-      ]
-    }
-  ],
-  "dependencies": {
-    "...": "..."
-  }
-}
-```
-
-**scope 解析规则**：
-- `com.unity` 是**前缀匹配**，覆盖所有 `com.unity.*` 包（含 `com.unity.cinemachine` / `com.unity.inputsystem` 等）
-- 内置模块 `com.unity.modules.*`（如 `modules.animation`）不走 registry，引擎自带，不受影响
-- 第三方包 `com.coplaydev.unity-mcp`（GitHub git URL）不走 registry，直接 git clone，不受影响
-
-#### 镜像完整度
-
-`packages.unity.cn` 与 `packages.unity.com` **完整双向同步**所有 `com.unity.*` 命名空间包。本项目所需的全部 18 个 `com.unity.*` 包均可拉到。
-
-#### 应急回退（镜像不可用时）
-
-若 `packages.unity.cn` 临时挂掉，**临时**改 manifest 把 `scopedRegistries` 数组置空 `[]` 或整段删除，Unity 会回退到默认官方 registry。**用完改回**，不要把空配置提交到主分支。
-
-更稳妥的做法：本地新建 `Packages/manifest.local.json` 备份，临时切换时改 `manifest.json`，应急完毕后从 `manifest.local.json` 恢复。
-
-#### 验证走的是镜像
-
-打开 Unity → `Window → Package Manager` → 任选一个 `com.unity.*` 包 → 右侧 Details 面板的 `View documentation` 链接如果指向 `docs.unity.cn`（而不是 `docs.unity3d.com`），说明配置生效。
-
-或命令行检查：
-
-```powershell
-# 看 Unity 缓存的 _resolved.json，能看到每个包的 actual url
-Get-Content Packages\packages-lock.json | Select-String "packages.unity"
-```
-
-应看到 `packages.unity.cn` 路径。
-
-#### 异地协作注意
-
-若**未来有队员到境外**（如出差、留学）：
-- 短期：本地通过环境变量 `HTTPS_PROXY` 走代理，manifest 不动
-- 长期：评估是否需要拆分配置（不推荐——Unity 不支持 manifest 多 profile）
+排障时检查 manifest、packages-lock 和 Editor Package Manager 实际错误。不要通过包文档链接推断包实际下载源，不写入账号/代理凭据，不自动切换团队使用的 registry。
 
 ### QFramework 安装方式
-QFramework **未发布到 OpenUPM**，必须手动安装：
 
-1. 下载地址：https://github.com/liangxiegame/QFramework/releases
-2. 选最新版（当前 `1.0.187-Unity2018Compatible`，向下兼容到 2018，在 Unity 2022.3 LTS 上可正常使用）
-3. 下载 `.unitypackage` → Unity 中 `Assets → Import Package → Custom Package` 导入
-4. **保留默认导入路径**，不要移动：
-   - `Assets/QFramework/`     ← 框架本体
-   - `Assets/QFrameworkData/` ← 框架运行时配置（ResKit/UIKit 等，路径写死，不可移动）
-5. 若弹出 API Updater 提示，选 "I Made a Backup, Go Ahead!" 让 Unity 自动升级 API
+项目已带有源码资产，无需为了恢复工程再次导入最新版。若从缺失框架的副本重建，以历史使用版本和当前仓库内容核对，从 [QFramework Releases](https://github.com/liangxiegame/QFramework/releases) 取得对应 unitypackage，再按 Unity 导入流程操作。
 
-> **说明**：QFramework 不放在 `Assets/ThirdParty/` 下，原因有二：
-> 1. 官方教程/示例/菜单路径默认 `Assets/QFramework/`，保留默认便于对照学习与升级
-> 2. `QFrameworkData/` 内部硬编码该路径，移动会导致配置丢失
+保留 `Assets/QFramework/` 与 `Assets/QFrameworkData/` 路径。QFramework 不属于 manifest 中的 Registry 包，也不迁入 ThirdParty 分类目录。
 
 ---
 
@@ -150,7 +87,7 @@ QFramework **未发布到 OpenUPM**，必须手动安装：
 | SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失 + FORGE3D 框架依赖（详见下方注） |
 | SciFiWeaponsBulletHell | 科幻武器音效（射击 / 爆炸 / UI） | `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/` | ✅ 已迁移 |
 | BehaviorDesigner (Opsive) | 敌人 AI Behavior Tree 框架 | `Assets/ThirdParty/AI/BehaviorDesigner/` | ✅ 已迁移-Sandbox demo |
-| UI 包（待选） | HUD / 副线接龙 UI / 骇入面板 / 主菜单 / 结算等表现层素材 | `Assets/ThirdParty/UI/<PackageName>/` | ⏳ Phase 3 副线 UI 阶段前选型；当前用 Unity 原生 UGUI / TMP 占位 |
+| UI 包（待选） | HUD / 副线接龙 UI / 骇入面板 / 主菜单 / 结算等表现层素材 | `Assets/ThirdParty/UI/<PackageName>/` | ⏳ Phase 3 副线 UI 阶段前选型；计划先用 Unity 原生 UGUI / TMP 占位，骇入 UI 尚未实现 |
 
 ### 状态语义
 
@@ -242,3 +179,9 @@ Core 层采用**独立 .NET 8 控制台工程**方案：开发期在 `CardChainC
 | Command → System → Event 链路 | ✅ 全链路验证通过 |
 | API Updater | 无弹窗；ResKit 有3条 CS0618 警告（UnityWebRequest.isNetworkError 废弃 API），不影响框架可用性 |
 | **总结** | **完全可用**，可按 ARCHITECTURE.md 规划开始 Phase 1/2 开发 |
+
+## 资产记录的恢复边界
+
+上表中的“已验证/已迁移”沿用 2026-05 历史记录，本轮没有重新播放 Sandbox 场景。SciFiEffects 的材质和框架依赖遗留继续保留。
+
+现有清单主要记录用途、路径和状态。第三方资产的完整版本、来源链接、作者、授权范围及凭证位置仍需逐包补齐；未核对的项保持待补，不根据仓库中已有资产推断可以公开再分发。购买凭证原件和账号信息不入库。

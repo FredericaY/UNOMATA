@@ -1,3 +1,11 @@
+# qframework-integration Specification
+
+## Purpose
+
+定义 QFramework 在本工程的集成要求、唯一组合根和 Model/System/Command 的分层调用边界，通过独立验证入口确认基础链路，为后续 Unity 业务扩展提供结构。
+
+## Requirements
+
 ### Requirement: QFramework 在 Unity 2022.3 LTS 无编译错误
 
 QFramework 导入后 Unity Editor SHALL 无编译错误。Console 中不出现红色错误（警告可接受），菜单栏出现 `QFramework` 顶级菜单入口。
