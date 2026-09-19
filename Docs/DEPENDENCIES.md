@@ -185,3 +185,18 @@ Core 层采用**独立 .NET 8 控制台工程**方案：开发期在 `CardChainC
 上表中的“已验证/已迁移”沿用 2026-05 历史记录，本轮没有重新播放 Sandbox 场景。SciFiEffects 的材质和框架依赖遗留继续保留。
 
 现有清单主要记录用途、路径和状态。第三方资产的完整版本、来源链接、作者、授权范围及凭证位置仍需逐包补齐；未核对的项保持待补，不根据仓库中已有资产推断可以公开再分发。购买凭证原件和账号信息不入库。
+
+
+## 本轮角色资产适配（2026-09-18，已通过整体验收）
+
+- `Assets/_Project/Prefabs/Player/ShoulderAimPlayer.prefab`：基于已有 RifleGirl/StarterAssets 场景角色的项目包装，保留原 Avatar、模型、武器材质和 MagicaCloth 配置；相机在场景上明确绑定。
+- `Assets/_Project/Animations/Player/Aiming/ShoulderAim.controller`：项目运动/瞄准状态机。该目录的 `.anim` 从 CombatGirls RifleGirl 与 FemaleRunnerAnimset 现有资源复制，清理供应商挂点/音效事件；`Run_45/90/135/180/225/270/315` 由普通 `Run` 的腿部周期生成，原生成入口为 `AimDirectionalRunSetup`（现已停用方向跑生成），不修改供应商 fbx。
+- `RifleAim.asset` 保存瞄准几何、躯干/肘标定和步幅配置；`Footsteps.asset` 保存项目动作的脚步相位。运行时不写回这些配置。
+- `PlayerMotor.cs` 依据已安装 StarterAssets ThirdPersonController 适配输入消费、朝向及时序；不新增运动能力，不使用第二个活跃供应商运动组件。
+- 本轮不安装/升级包，不新增采购资产；资产原始授权/版本缺项仍按上方登记，不由项目复制推断再分发权限。
+
+`StableArmIKConstraint` / Job / Binder 为项目约束，复用 Animation Rigging 1.3.1 的 `TwoBoneIKConstraintData`、绑定器和无肘提示的双骨解算；肘转向使用固定肩手轴，修复反向投影时的端点漂移。包内 `AnimationRuntimeUtils`、`QuaternionExt` 等文件保持只读。
+
+用户最终观感复验否定方向快跑后，`Run_45…315` 保留为未采用实验资产，已从当前控制器和 Footsteps 配置断开；`AimDirectionalRunSetup.Configure()` 现仅配置纯向前 Run 与各向 AimWalk，不再烘焙方向跑。
+
+跳跃时序修订复用项目 `JumpStart.anim`（FRA R_Jump_AirR 副本），JumpStart/InAir 状态共享其物理相位；旧 `InAir.anim`（AirL）不再进入当前控制器。未修改 fbx 或包版本。

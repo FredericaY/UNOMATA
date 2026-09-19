@@ -26,6 +26,11 @@ namespace Unomata.Gameplay
             _audioModel = this.GetModel<AudioModel>();
         }
 
+        public void ConfigureAssets(AudioClip[] footsteps, AudioClip landing)
+        {
+            _audioModel.FootstepClips = footsteps == null ? null : (AudioClip[])footsteps.Clone();
+            _audioModel.LandingClip = landing;
+        }
         // ── 脚步音 ────────────────────────────────────────────────
         /// <summary>
         /// 播放脚步音。通过 <see cref="FootstepPlayedEvent"/> 通知 AudioBridge 出声。

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8981abdc4228e9d4f8e2c770ef7d6d58, type: 3}
+  m_Name: RifleAim
+  m_EditorClassIdentifier: 
+  _farDistance: 200
+  _cameraMask:
+    serializedVersion: 2
+    m_Bits: 1
+  _muzzleMask:
+    serializedVersion: 2
+    m_Bits: 1
+  _blendDuration: 0.3
+  _motionBlendTime: 0.12
+  _torsoAssistWeight: 0.8
+  _jumpTakeoffPhase: 0.15
+  _jumpApexPhase: 0.4
+  _jumpLandingPhase: 0.9
+  _fallStartPhase: 0.75
+  _jumpBlendDuration: 0.04
+  _gripOffset: {x: 0.11851528, y: -0.022610545, z: 0.13564824}
+  _leftElbow: {x: -0.18672073, y: 1.1323974, z: 0.1528362}
+  _rightElbow: {x: 0.3317871, y: 1.0964177, z: -0.16521955}
+  _neutralSpine:
+  - {x: -0.20743479, y: 0.36663035, z: 0.5566525, w: -0.7160245}
+  - {x: -0.32615906, y: 0.31874576, z: 0.5799044, w: -0.67507935}
+  - {x: -0.35942352, y: 0.14464362, z: 0.739139, w: -0.55096877}
+  _pitchFractions:
+  - 0.15
+  - 0.35
+  - 0.55
+  _yawFractions:
+  - 0.3
+  - 0.6
+  - 1
+  _forwardWalkSpeed: 1.5231721
+  _backWalkSpeed: 1.4522469
+  _sideWalkSpeed: 1.396815
+  _runStrideSpeed: 5.106494

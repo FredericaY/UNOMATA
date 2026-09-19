@@ -29,6 +29,15 @@ namespace Unomata.Gameplay
             _aimSubscription = null;
         }
 
+        /// <summary>Read-only movement policy. Keep the held Sprint input intact when a direction is disallowed.</summary>
+        public bool CanSprintInCurrentDirection()
+        {
+            var move=_inputModel.Move.Value;
+            // Zero input keeps normal braking; the motor still requires movement to request sprint speed.
+            return !_inputModel.IsAiming.Value || move.sqrMagnitude<=0.0001f ||
+                (move.y>0f && Mathf.Abs(move.x)<=0.0001f);
+        }
+
         /// <summary>
         /// 对玩家造成伤害，HP 不得低于 0。
         /// Phase 4 联动时此方法将接收经 DamageReductionFactor 修正后的伤害值。

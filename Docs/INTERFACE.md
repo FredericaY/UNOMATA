@@ -466,3 +466,22 @@ generate_options(state, config):
 | 死局反应窗口时长 / 突破奖励量 | Unity 端常量，待 Phase 5 平衡 |
 | `WildAppearRate` 默认值 | 暂定 0.05，Phase 5 平衡 |
 | `SyncRate → SolvableRate` 映射公式 | 暂定 `0.5 + 0.45 × syncRate`，Phase 5 平衡 |
+
+
+## Unity 越肩瞄准输出（2026-09-18 已验收，非 Core 契约）
+
+`Unomata.Gameplay.AimSnapshot` 已实现并接入 SampleScene，整体验收状态见 [动画记录](AboutTheAnimation.md)。不会改变本文前述规划中的 Core/HackSession 接口。
+
+读取入口：`GameApp.Interface.SendQuery(new AimSnapshotQuery(sceneContext, frame))`。消费者必须在该帧 `PlayerAimPresentation` 完成之后读取；未完成、过期帧或旧场景代际不返回 Ready。Query 没有射线、事件或场景写入副作用。后续 Fire/弹丸接入尚未实现。
+
+| 字段 | 语义 |
+| --- | --- |
+| SceneGeneration / FrameId | 场景表现会话 Guid / 最终姿态帧 |
+| Status | Inactive、Transition、Ready、Blocked、Invalid |
+| Failure | 明确的失效/遮挡原因；内部起点、不可达近点、非法配置、过期或不可达手部均可区分 |
+| MuzzlePosition / BarrelDirection | 最终实际枪口世界位置 / 单位枪管方向，不是相机方向或预期方向 |
+| DesiredTarget | 最终渲染相机中心最近有效命中；无命中为配置远点，默认 200m |
+| HasObstruction / ObstructionPoint | 枪口路径受阻及较近阻挡点，与期望目标分开 |
+| AimErrorDegrees | 实际枪管与目标连线的角误差 |
+
+写入流程由表现协调者发出 BeginAimContext、PrepareAimFrame、CompleteAimFrame、InvalidateAim Command，领域判断在 IAimSystem。Complete 提交最终枪口和握把可达性，不进行射击；普通走跑跳保持连续 Ready，只有实际举放枪处于 Transition。失焦、停用或退出使会话失效，清理不访问惰性入口创建新架构。

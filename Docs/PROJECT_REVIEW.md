@@ -3,6 +3,8 @@
 > 核对日期：2026-09-17（本地时间）。基线：`main`，本地 HEAD `b501cde`（2026-06-01）。本次未查询远端最新状态。
 > 范围：首次回顾为仓库阅读与整理。随后用户授权环境恢复，.NET/MCP 已恢复，Core 139 项测试通过；首次 Unity 运行暴露输入资产缺陷，最新状态见 [ENVIRONMENT_RECOVERY.md](ENVIRONMENT_RECOVERY.md)。下文保留首次盘点的历史观察。
 
+> 后续状态（2026-09-18）：输入恢复与 [移动/越肩瞄准修复](../openspec/changes/archive/2026-09-18-fix-over-shoulder-aim-locomotion/proposal.md) 均已获用户验收；新修复 47/47 完成，正式规格已同步归档。下方仍保留首次盘点原貌，当前进度以 [TODO](TODO.md) 与 [动画验收记录](AboutTheAnimation.md) 为准。
+
 ## 结论
 
 项目仍处于基础原型阶段，尚未形成“射击 + 接龙骇入”的完整循环。已有资产整合、角色移动和瞄准框架、QFramework 输入/音频接入，以及独立 Core 的卡牌类型、规则和发牌器。

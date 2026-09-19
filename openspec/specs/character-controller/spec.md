@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Player 角色控制能力：CombatGirls 模型与 StarterAssets ThirdPersonController 集成、项目自有 Animator Controller、跳跃链路、瞄准下半身朝向（StrafeController 死区迟滞）等 TPS 角色相关规格。
+定义当前 CombatGirls 角色的项目运动适配、动画与跳落衔接、持枪和布料表现，保持输入与物理基线，并以唯一运动和姿态所有者支持越肩瞄准。
 ## Requirements
 ### Requirement: CombatGirls 模型骨骼与 StarterAssets 兼容性明确
 
@@ -144,195 +144,123 @@ SampleScene SHALL 只保留一个主相机对象（含 Cinemachine Brain），�
 
 ### Requirement: Base Layer 动画素材切到 RifleGirl + FemaleRunnerAnimset 风格
 
-`UnomataPlayer.controller` 的 Base Layer SHALL 把 6 个核心 Motion 槽切换为 RifleGirl 与 FemaleRunnerAnimset 提供的素材，状态机拓扑、参数、过渡条件保持与 `StarterAssetsThirdPerson.controller` 完全一致。
+角色 SHALL 保留 RifleGirl/FemaleRunnerAnimset 风格的基础站立、走跑与跳跃表现，并支持独立的瞄准方向运动。项目动画拓扑、混合参数和播放速率 SHALL 以实际方向、速度及过渡验收为依据，不再要求与供应商控制器完全一致。供应商源动画 SHALL 不被修改。
 
 #### Scenario: Idle Walk Run BlendTree 三档 Motion 切换正确
+- **WHEN** 角色在非瞄准状态从静止加速到行走、奔跑
+- **THEN** SHALL 使用现有 Idle/Walk/Run 或其项目自有适配，按实际速度自然混合，保留站走跑三档能力，不因瞄准改造失效
 
-- **WHEN** 在 Unity Editor 打开 `UnomataPlayer.controller` 的 Base Layer，定位到 `Idle Walk Run Blend` State 内嵌的 BlendTree
-- **THEN** BlendTree 三个子 motion 分别为：
-  - threshold = 0 → `Assets/ThirdParty/Characters/Player/CombatGirls/RifleGirl/Animations/Normal/R_Idle.fbx` 内主 clip `Idle`（3.000s, looping）
-  - threshold = 2 → `R_Walk.fbx` 内主 clip `Walk`（1.133s, looping）
-  - threshold = 6 → `R_Run.fbx` 内主 clip `Run`（0.667s, looping）
-
----
+#### Scenario: 瞄准八方向行走与纯向前奔跑
+- **WHEN** 瞄准时执行八方向行走与纯向前奔跑
+- **THEN** 腿部 SHALL 播放对应实际位移方向与速度的步态，不以普通向前步态横向滑动代替；上身和枪口满足 over-shoulder-aim
 
 ### Requirement: 跳跃链路三状态 Motion 切换正确
 
-`UnomataPlayer.controller` Base Layer 的 `JumpStart` / `InAir` / `JumpLand` 三个 State SHALL 把 Motion 切换为 RifleGirl + FemaleRunnerAnimset 系列素材；其中 JumpStart 改用滞空姿态素材（R_Jump_AirR），让其视觉职责降级为"滞空姿态预览"，与 InAir 的 R_Jump_AirL 配对（同源同设计）。
+角色 SHALL 保留起跳、空中、落地的完整链路，复用项目裁定的连续空中动作与三类落地素材，允许为瞄准方向和动作衔接进行项目内适配。SHALL 不改变既定跳跃物理以迁就动画，也不要求固定状态数量或完全复制供应商拓扑。
 
 #### Scenario: JumpStart / InAir / JumpLand 三状态 Motion 引用正确
-
-- **WHEN** 在 Base Layer 定位到 `JumpStart` / `InAir` / `JumpLand` State
-- **THEN** 三状态满足：
-  - JumpStart（AnimationClip 类型）的 Motion 字段为 `Assets/ThirdParty/Characters/Player/FemaleRunnerAnimset/Animations_Rifle/Jumps/Jump/R_Jump_AirR.fbx` 内主 clip `R_Jump_AirR`（1.167s）
-  - InAir（AnimationClip 类型）的 Motion 字段为 `FemaleRunnerAnimset/Animations_Rifle/Jumps/Jump/R_Jump_AirL.fbx` 内主 clip `R_Jump_AirL`（1.167s）
-  - JumpLand（**BlendTree 类型，3 children，按 Speed 参数 0/2/6 分站立/行走/奔跑落地**）的子 motion 分别为：
-    - threshold = 0 → `FemaleRunnerAnimset/Animations_Rifle/Jumps/Land/R_Land_2h.fbx` 内主 clip `R_Land_2h`（1.167s）
-    - threshold = 2 → `FemaleRunnerAnimset/Animations_Rifle/Jumps/LandToRun/R_Land_ToRun1.fbx` 内主 clip `R_Land_ToRun1`（0.600s）
-    - threshold = 6 → `FemaleRunnerAnimset/Animations_Rifle/Jumps/LandToRun/R_Land_ToRun3.fbx` 内主 clip `R_Land_ToRun3`（0.867s）
+- **WHEN** 原地、走步或奔跑时起跳并落地
+- **THEN** SHALL 分别出现及时的起跳/空中/适当速度落地姿态，现有素材或可追溯的项目适配引用有效，不在物理落地后补播未完成起跳动作
 
 #### Scenario: Base Layer 仅含 4 个 State 无 Fly
-
-- **WHEN** 检查 `UnomataPlayer.controller` Base Layer 顶层 stateMachine 的 states 数组
-- **THEN** 数组长度为 4，名称分别为 `Idle Walk Run Blend` / `JumpStart` / `InAir` / `JumpLand`，无任何 `Fly` 命名 State（与 SA 原 controller 拓扑一致）
+- **WHEN** 检查本次项目动画状态机的可达状态
+- **THEN** SHALL 包含完整地面/空中/落地能力且不接入 Fly 行为；允许为瞄准运动增加必要状态，不以旧“四状态”限制阻止修复
 
 #### Scenario: 状态机参数与拓扑无变化
-
-- **WHEN** 对比 `UnomataPlayer.controller` 与 `StarterAssetsThirdPerson.controller` 的 Animator 参数列表与状态机结构
-- **THEN** 参数名 / 类型完全一致（`Speed` float, `Jump` bool, `Grounded` bool, `FreeFall` bool, `MotionSpeed` float），所有 State / SubStateMachine / Transition 数量与连接关系一致，每个 Transition 的 `HasExitTime` / `Conditions` 一致
+- **WHEN** 对比修改前后的参数消费者与状态切换
+- **THEN** 原 Speed/Jump/Grounded/FreeFall/MotionSpeed 行为 SHALL 保持兼容或成对迁移并回归；必要新增参数/拓扑必须与生产代码、音频及验证同步，无悬空引用
 
 #### Scenario: 不引用 fbx 内 __preview__ 副本
-
-- **WHEN** 检查任一 Motion 引用的 fileID 与 clip 名
-- **THEN** clip 名不以 `__preview__` 开头（必须引主 clip）
-
----
+- **WHEN** 检查项目动画引用
+- **THEN** SHALL 只引用正式主 clip 或项目适配 clip，不引用 __preview__ 或仅存于编辑预览的临时片段
 
 ### Requirement: PlayerArmature.Animator 使用项目自有 Controller
 
-SampleScene 内 `PlayerArmature` 根对象的 `Animator` 组件 SHALL 把 `runtimeAnimatorController` 字段切换为 `Assets/_Project/Animations/Player/UnomataPlayer.controller`，不再引用 StarterAssets 自带 controller。
+正式场景角色 SHALL 使用项目自有的 `Assets/_Project/Animations/Player/Aiming/ShoulderAim.controller`，通过唯一受控动画图求值，不与供应商或旧瞄准控制器双重驱动。旧 UnomataPlayer.controller 保留为历史资产，不能作为当前角色生产引用。
 
 #### Scenario: Animator Controller 字段已切换
-
-- **WHEN** 选中 SampleScene 中 PlayerArmature，查看 Animator 组件
-- **THEN** Controller 字段显示为 `UnomataPlayer`（非 `StarterAssetsThirdPerson`）
+- **WHEN** 检查保存重载后的 SampleScene 角色与表现组件
+- **THEN** Controller 引用 SHALL 指向 ShoulderAim；运行时受控图使用同一资产，不依赖仅存于内存的临时引用
 
 #### Scenario: B1a 已立的 Animator 契约不退化
-
-- **WHEN** 检查 PlayerArmature.Animator 的 Avatar 字段、PlayerArmature 子对象的 Geometry 激活状态、Rifle_Full_Body 子对象的 MagicaCloth2 组件
-- **THEN** Avatar 仍为 `Humanoid_FAvatar`、Geometry 仍 `SetActive(false)`、MagicaCloth2 组件保持启用
-
----
+- **WHEN** 检查角色 Avatar、旧 Geometry 和模型布料
+- **THEN** SHALL 保留 Humanoid_FAvatar、禁用的旧 Geometry 与启用且有效的 MagicaCloth2
 
 ### Requirement: Play Mode 下 RifleGirl 风格基础动画正确播放
 
-进入 Play Mode 后，PlayerArmature SHALL 在站立 / 行走 / 奔跑 / 起跳 / 空中 / 落地全部状态下播放 RifleGirl 与 FemaleRunnerAnimset 风格动画，无 Avatar 警告与红色错误。
+角色 SHALL 在非瞄准及瞄准的站立、行走、奔跑、起跳、空中、落地状态下正确播放对应动画，无 Avatar/绑定错误、严重变形或无接收器事件。瞄准动作的枪口及握把误差 SHALL 按 over-shoulder-aim 验收。
 
 #### Scenario: 站立播 R_Idle
-
-- **WHEN** Play Mode 下角色无任何输入静止
-- **THEN** 播放 `Idle` clip（持枪站立，约 3 秒循环）
+- **WHEN** 非瞄准且无移动输入
+- **THEN** SHALL 播放基础站立动画；进入瞄准后平滑进入持枪姿态而非沿用错误的侧偏补偿
 
 #### Scenario: WASD 移动播 R_Walk / R_Run
-
-- **WHEN** Play Mode 下按 WASD（不按 Shift）
-- **THEN** 角色播放 `Walk` clip 移动；按住 Shift 时切到 `Run` clip（BlendTree Speed 阈值过渡）
+- **WHEN** 非瞄准按 WASD 并切换 Shift
+- **THEN** SHALL 保持走跑和朝移动方向转身；瞄准时则使用与方向、速度匹配的瞄准步态
 
 #### Scenario: 空格跳跃播完整跳跃链路
-
-- **WHEN** Play Mode 下按 Space
-- **THEN** 状态机依次进入 JumpStart（播 `R_Jump_AirR`，滞空姿态预览）→ InAir（播 `R_Jump_AirL`，滞空主循环）→ JumpLand（按落地瞬间 Speed 值播 BlendTree 内对应 land：站立 → `R_Land_2h`，走步 → `R_Land_ToRun1`，奔跑 → `R_Land_ToRun3`），整段空中视觉由 R_Jump_AirR / AirL 滞空姿态主导（无虚假"准备/蹬地"动作，匹配 ThirdPersonController 的瞬时起跳物理）
+- **WHEN** 原地或按住任一方向，在非瞄准/瞄准下按空格
+- **THEN** SHALL 完成起跳、空中、落地及恢复地面运动，瞄准枪口不会因持续方向输入发生动作相关偏差，按住空格跨落地不连跳
 
 #### Scenario: Console 无红色错误与 Avatar 警告
-
-- **WHEN** Play Mode 运行 30 秒覆盖站立 / 移动 / 跳跃所有状态
-- **THEN** Console 无红色错误（含 `AnimationEvent ... has no receiver` 类错误）；无 `Avatar source not found` / `Animator is not playing an AnimatorController` / `retargeting failed` 等黄色警告
-
----
+- **WHEN** 独立运行覆盖完整动作矩阵并检查 Animator 绑定状态与 Console
+- **THEN** SHALL 无未解释的角色动画错误/警告，包括无接收器、Avatar、绑定和重定向异常，已发现疑点具有修复或排除证据
 
 ### Requirement: PlayerArmature 提供 SwitchSocket 动画事件接收器
 
-PlayerArmature 根对象 SHALL 挂载提供 `void SwitchSocket(string slot)` 方法的 MonoBehaviour，吞掉 RifleGirl R_Idle / R_Walk / R_Run 等 fbx 内嵌的 `SwitchSocket` AnimationEvent，避免 Console 红色错误 spam。
-
-`PlayerAnimEventReceiver` SHALL 是普通 MonoBehaviour（不实现 `IController`）。脚步音与落地音已由 `AudioBridge.Update()` 相位驱动处理，不依赖 AnimationEvent，故 `OnFootstep` / `OnLand` 方法不在此类实现。
-
-`B1b.2 / Phase 4` 持枪 IK 接入时，`SwitchSocket` 将实现真实挂点切换逻辑。
+角色 SHALL 安全兼容现有素材携带的 SwitchSocket 事件，避免无接收器错误；本次固定步枪的实际挂点与手部姿态 SHALL 由项目瞄准方案统一管理。供应商事件 SHALL NOT 重新夺取武器姿态或开启第二套 IK。脚步/落地 SHALL 不依赖这些供应商事件重复出声。
 
 #### Scenario: 接收器组件存在
-
-- **WHEN** 选中 SampleScene 中 PlayerArmature，查看 Inspector 组件列表
-- **THEN** 存在 `PlayerAnimEventReceiver` 组件（位于 `Assets/_Project/Scripts/Gameplay/Player/PlayerAnimEventReceiver.cs`）
+- **WHEN** 检查交付角色使用的动画事件及兼容接收入口
+- **THEN** 每个保留事件 SHALL 有有效接收或项目副本中的显式清理，正式动画播放无悬空回调
 
 #### Scenario: SwitchSocket 方法被反射调用不抛错
-
-- **WHEN** Play Mode 下播放 R_Idle / R_Walk / R_Run（任一会触发 `SwitchSocket` AnimationEvent 的 clip）
-- **THEN** Console 不输出 `AnimationEvent 'SwitchSocket' on animation '...' has no receiver` 红色错误
-
----
+- **WHEN** 站立、移动、AimJog 等素材触发已有挂点/IK 字符串事件
+- **THEN** SHALL 无无接收器异常，且不会把枪重挂回旧右手父约束、覆盖新握把或造成跳变
 
 ### Requirement: JumpStart State Speed = 3.0 与其他 3 State 默认 1.0
 
-`UnomataPlayer.controller` Base Layer 中 `JumpStart` State 的 `speed` 字段 SHALL 设为 `3.0`，让 R_Jump_AirR.fbx (1.167s) 实际播放时长压缩到 0.389s，与 SA 自家 Jump.fbx (0.400s) 节奏对齐，从而让 SA 状态机调参（exitTime=0.6637）在新素材上自洽（避免落地后才慢悠悠播 JumpStart→InAir→JumpLand 链路的"落地卡顿"）。其余 3 State (`Idle Walk Run Blend` / `InAir` / `JumpLand`) 的 speed 字段 SHALL 保持默认值 1.0。
+角色动画播放速率 SHALL 与当前运动/物理节奏一致；原 JumpStart=3.0、其他=1.0 是历史起点，不再是不可更改的验收数值。调整 SHALL 限于项目资产并记录依据，不改变跳高、重力或走跑速度来使动作通过。
 
 #### Scenario: JumpStart speed = 3.0
-
-- **WHEN** 检查 `UnomataPlayer.controller` Base Layer 中 `JumpStart` State 的 `speed` 字段
-- **THEN** 字段值为 `3.0`
+- **WHEN** 检查起跳播放速率与运行中的离地/落地时点
+- **THEN** SHALL 使用经过复验的速率，避免起跳/落地卡顿；保留 3.0 或调整均必须有同一动作矩阵证据
 
 #### Scenario: 其他 3 个 State Speed 均为 1.0
-
-- **WHEN** 检查 `Idle Walk Run Blend` / `InAir` / `JumpLand` 三个 State 的 `speed` 字段
-- **THEN** 三个字段值均为 `1.0`
-
----
+- **WHEN** 检查地面走跑、空中、落地及新增瞄准方向状态
+- **THEN** 播放速率 SHALL 与各自实际节奏匹配，允许合理配置化调速，不强制全为 1.0，不产生明显滑步或加速失真
 
 ### Requirement: 5 条 transition 与 SA 原 controller 完全一致
 
-`UnomataPlayer.controller` Base Layer 的 5 条 transition SHALL 与 `StarterAssetsThirdPerson.controller` 同名 transition 全部字段一字不差，包括 conditions / hasExitTime / exitTime / duration / hasFixedDuration / offset。
+项目过渡 SHALL 保障地面、起跳、空中和落地行为连续，允许根据实际素材时长、方向和瞄准状态修改过渡条件、时间及偏移；原五条 transition 与供应商逐字段一致的限制被替代。修改 SHALL 同步参数消费者和落地音检测。
 
 #### Scenario: 全 5 条 transition 字段一致
-
-- **WHEN** 对比 `UnomataPlayer.controller` 与 `StarterAssetsThirdPerson.controller` 的 5 条 transition：
-  - `Idle Walk Run Blend → InAir`
-  - `Idle Walk Run Blend → JumpStart`
-  - `InAir → JumpLand`
-  - `JumpLand → Idle Walk Run Blend`
-  - `JumpStart → InAir`
-- **THEN** 每条 transition 的 conditions / hasExitTime / exitTime / duration / hasFixedDuration / offset 字段全部一致（容差 < 0.0001）
+- **WHEN** 覆盖地面到起跳/下落、起跳到空中、空中到落地、落地到地面的原有路径及瞄准变体
+- **THEN** 每条路径 SHALL 正常到达，无滞留、迟发落地或重复事件；过渡差异有记录并经实际运行验证，而非依靠与 SA 数值一致判定通过
 
 ### Requirement: AnimatorAimBridge MoveX/Y 从 PlayerInputModel 读取
 
-B1b.2 中 `AnimatorAimBridge.Update()` 临时直接读 `Input.GetAxis("Horizontal/Vertical")` 写入 `MoveX`/`MoveY` Animator 参数。本 change 后，此临时做法 SHALL 被替换为从 `PlayerInputModel.Move` 读取。
-
-`AnimatorAimBridge.Update()` 中写 MoveX/MoveY 的代码块 SHALL 改为：
-```
-_animator.SetFloat("MoveX", _inputModel.Move.Value.x);
-_animator.SetFloat("MoveY", _inputModel.Move.Value.y);
-```
-（`_inputModel` 为 `this.GetModel<PlayerInputModel>()`，在 `Start` 中获取）
-
-代码中 SHALL NOT 存在任何 `Input.GetAxis` 调用（`TempAimInputDriver` 删除后不得有任何直接读取 Unity 旧 Input System 的代码保留在 Player/ 目录下的生产脚本中）。
+移动意图 SHALL 继续来自权威输入 Model，动画方向/速度 SHALL 从该意图驱动的实际运动状态获得并转换到身体局部坐标，不新增直接读取旧输入 API 的入口。SHALL NOT 把按键值或素材名称直接当作实际局部运动方向，撞墙停住、加减速和方向切换均应正确表现。
 
 #### Scenario: 瞄准移动时 BlendTree 参数由 PlayerInputModel 驱动
-
-- **WHEN** Play Mode 下瞄准状态下按 W（前进）+ A（左移）
-- **THEN** `Animator.GetFloat("MoveX")` 应为约 -1，`"MoveY"` 应为约 1，上半身播放 `AimWalk_FL` 对应方向的 BlendTree 节点
+- **WHEN** 瞄准时按 W+A，随后释放或被墙阻挡
+- **THEN** 运动 SHALL 来自现有输入链，动画表现为真实局部斜向速度并随实际速度停止/减速，不强制数值为(-1,1)或指定 FL 文件
 
 #### Scenario: AnimatorAimBridge 无 Input.GetAxis 调用
-
-- **WHEN** 代码审查 `AnimatorAimBridge.cs`
-- **THEN** 文件中 SHALL NOT 包含 `Input.GetAxis` 或 `Input.GetButton`（旧 Input System API）字符串
-
----
+- **WHEN** 检查角色生产输入及动画更新路径
+- **THEN** SHALL 无 Input.GetAxis/Input.GetButton 旧输入采集，没有独立于既有输入适配的第二路按键状态
 
 ### Requirement: AnimatorAimBridge 上半身 Yaw 补偿 + Pitch 叠加
 
-`AnimatorAimBridge.LateUpdate()` SHALL 在瞄准（UpperBodyAim 层权重 `w > 0`）时对 spine 骨骼（`HumanBodyBones.UpperChest`，回退 `Chest`）叠加两个旋转分量，实现 TPS 上半身 aim offset：
-
-- `yawOffset = Mathf.DeltaAngle(transform.eulerAngles.y, Camera.main.transform.eulerAngles.y)`：补偿下半身（由 `StrafeController` 控制）与相机的剩余 Yaw 差，实现「扭腰跟枪」。死区内该残差即上半身扭转量。
-- `pitch`：相机俯仰角，`Mathf.Clamp` 限幅 `±_maxPitchDeg`（`SerializeField`，默认 50°），实现上半身随相机俯仰。
-
-叠加方式 SHALL 在**世界空间**用 `Quaternion.AngleAxis` 施加增量旋转，**不得**用骨骼 `localRotation *= Euler(...)`——实测 spine_03 的 local 轴 X≈世界下方、Y≈角色前方、Z≈角色左方，与世界轴完全不对齐，local Euler 会把 pitch 误施加成水平偏转，导致上半身「偏左」、俯仰错位。正确写法：
-```
-_chestBone.rotation = Quaternion.AngleAxis(yawOffset * w, Vector3.up)
-                    * Quaternion.AngleAxis(-pitch * w, transform.right)
-                    * _chestBone.rotation;
-```
-（`w` 为 UpperBodyAim 层权重；Yaw 绕世界 Up、Pitch 绕角色 Right、`-pitch` 为抬头方向）下半身 SHALL NOT 参与 Pitch（人物不整体前倾后仰）。
-
-B1b.2 注释中描述但实现缺失的 `yawOffset` 逻辑 SHALL 在本 change 恢复。
+角色 SHALL 通过有限且自然的躯干姿态配合武器和双手对准，不再要求手写脊椎世界旋转或固定三轴 bias。最终准确性 SHALL 以实际枪管衡量，不以胸骨/手骨方向衡量。下半身 SHALL 不参与视角 Pitch 整体倾倒；完整验收范围为当前相机 Euler pitch [-30°,70°]，替代旧文档未与场景一致的 ±50° 数字。
 
 #### Scenario: 静止死区内上半身扭腰跟枪
-
-- **WHEN** 瞄准静止，相机相对身体水平偏转约 8°（死区 10° 内）
-- **THEN** spine 骨骼 SHALL 叠加约 8° 的 yawOffset，上半身（含双臂/武器）扭向相机，下半身 transform 不动
+- **WHEN** 稳定瞄准静止，相机相对身体水平偏转约 8°且未超过配置起转阈值
+- **THEN** 脚 SHALL 保持方向，上身自然跟随，实际枪管满足误差门槛，不出现过度侧倾或依赖手骨 forward 的假对齐
 
 #### Scenario: 上半身随相机俯仰、下半身不参与
-
-- **WHEN** 瞄准时相机上下俯仰
-- **THEN** spine 骨骼 SHALL 叠加对应 pitch（限幅 ±50°），角色下半身 SHALL 保持竖直（不前倾后仰）
-
----
+- **WHEN** 在完整允许俯仰范围内上下转动相机
+- **THEN** 上身与手臂 SHALL 协调跟随，下半身竖直，不翻转、拉伸或以缩窄允许视角规避问题
 
 ### Requirement: TempAimInputDriver 从项目中删除
 
@@ -355,18 +283,60 @@ B1b.2 注释中描述但实现缺失的 `yawOffset` 逻辑 SHALL 在本 change �
 
 ### Requirement: PlayerInput Behavior 改为 Invoke C# Events 并接线 PlayerController
 
-SampleScene 中 `PlayerArmature` 上的 `PlayerInput` 组件 SHALL 满足：
-- `Behavior` 字段 SHALL 设为 `Invoke C# Events`（或 `Invoke Unity Events`，两者均切断 SA 默认 `SendMessage` 路由）
-- `Actions` 字段 SHALL 引用 `Assets/_Project/Settings/UnomataPlayer.inputactions`
-- `StarterAssetsInputs.OnMove / OnJump / OnSprint` 等 SA 默认回调 SHALL NOT 直接被 `PlayerInput` 事件系统触发（已由 `SAInputAdapter` 统一替代）
+正式角色 PlayerInput SHALL 使用项目 UnomataPlayer.inputactions、Player Map 与 Invoke CSharpEvents。业务输入经 PlayerController、Command、Model 和现有适配层到达唯一项目运动消费者；SHALL NOT 恢复供应商 SendMessages 或同时运行第二个运动控制器。
 
 #### Scenario: PlayerInput Behavior 已切换
-
-- **WHEN** 在 Unity Editor 选中 PlayerArmature 查看 PlayerInput 组件
-- **THEN** Behavior 字段显示 `Invoke C# Events`（或 `Invoke Unity Events`，而非 `Send Messages` / `Broadcast Messages`）
+- **WHEN** 检查正式场景 PlayerInput
+- **THEN** SHALL 为 Invoke CSharpEvents，项目动作资产与 Player Map 引用正确
 
 #### Scenario: 移动输入经 QF 链路完整流通至 TPC
-
 - **WHEN** Play Mode 下按 W 键
-- **THEN** 链路 `PlayerInput → PlayerController.OnMove → SetMoveInputCommand → PlayerInputModel.Move → SAInputAdapter → StarterAssetsInputs.move → ThirdPersonController` SHA 完整生效，角色向前移动
+- **THEN** 业务输入 SHALL 经 PlayerInput → PlayerController → Command → PlayerInputModel → SAInputAdapter → 输入缓冲 → 项目 PlayerMotor 同帧消费；旧 TPC 已被项目适配替代，角色正常向前移动
 
+### Requirement: 角色移动瞄准不依赖互相覆盖的姿态写入
+
+角色 SHALL 在最终身体朝向确定后形成同帧一致的动画/武器姿态；同一根朝向、武器或手部结果 SHALL 不由旧新两套控制重复覆盖。瞄准时跑步和跳跃能力 SHALL 保留。
+
+#### Scenario: 方向快速切换
+- **WHEN** 持续瞄准并在 W/S/A/D 与斜向间切换、同时改变速度
+- **THEN** SHALL 无先朝移动方向转身再被拉回导致的枪口跳变，无固定脚步面朝前而身体横滑，无重复位移或根旋转
+
+#### Scenario: 保存重载后仍可复现交付状态
+- **WHEN** 保存项目资产、退出运行、重新加载场景并独立启动
+- **THEN** 当前模型/Avatar/布料、禁用的旧外观和新角色接线 SHALL 保持正确，无仅在内存有效的绑定或新增缺失引用
+
+### Requirement: 非瞄准奔跑的武器跟随基础持枪姿态
+
+非瞄准站立、走跑和跳落时，武器 SHALL 跟随当帧基础动画的持枪姿态，不被根空间固定位置拉入身体。进出瞄准 SHALL 连续过渡，不能回读已经受自身约束的手部造成循环或位置跳变。
+
+#### Scenario: 非瞄准奔跑完整周期
+- **WHEN** 松开瞄准并以当前跑速奔跑，覆盖完整动作周期和各转向
+- **THEN** 武器 SHALL 保持合理握持，不穿入躯干中央，不与手臂脱节
+
+#### Scenario: 奔跑中举枪和放下
+- **WHEN** 保持奔跑并连续进入、退出瞄准
+- **THEN** 武器和手臂 SHALL 从当前基础姿态平滑衔接，不瞬移到固定低持枪点
+
+### Requirement: 瞄准步态连续混合并使用真实奔跑下半身
+
+瞄准站立、走动、快跑和换向 SHALL 连续混合。仅纯向前允许举枪快跑，下半身 SHALL 复用当前普通奔跑动作，不能以仅加速瞄准走路冒充快跑；上半身与枪口仍满足原瞄准验收指标。
+
+#### Scenario: 按下和释放移动
+- **WHEN** 保持瞄准，从静止开始移动并停止，或反向/斜向切换
+- **THEN** 动作幅度与实际速度 SHALL 平滑变化，不从零瞬间切成满幅步态，不因换向重开瞄准过渡豁免误差
+
+#### Scenario: 举枪仅纯向前快跑
+- **WHEN** 在瞄准状态按住 Shift 并切换八方向输入
+- **THEN** 仅纯向前 SHALL 使用普通 Run 下半身与 5.335m/s 跑速；侧向、后退及四个斜向 SHALL 使用对应走路与 2m/s 走速，枪口/握把仍满足原精度门槛
+
+### Requirement: 起跳腿部姿态与即时离地同步
+
+跳跃动画 SHALL 在物理起跳同帧参与腿部姿态混合，并按上升/顶点/下落连续推进，避免身体明显升起后才从地面姿态收腿，以及空中切换相反起手片段导致重新蹬腿。SHALL 保持跳高、重力、即时输入与单次落地音，不以延迟物理或音频驱动跳跃掩盖时序。
+
+#### Scenario: 原地与移动起跳
+- **WHEN** 非瞄准/瞄准下原地、走步或允许的奔跑起跳
+- **THEN** 首个离地帧 SHALL 已开始腿部动作，上升及顶点无重播起手，下降衔接落地且只有一次落地音
+
+#### Scenario: 帧率与保存重载
+- **WHEN** 在 30/60/120fps 与保存重载后复验同一跳跃
+- **THEN** 姿态 SHALL 跟随相同物理阶段，跳高与输入消费不变，无持续按住自动连跳

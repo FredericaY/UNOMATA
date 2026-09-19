@@ -99,70 +99,63 @@ PlayerArmature 的 PlayerInput SHALL 使用该项目资产、defaultActionMap=Pl
 
 ### Requirement: StrafeController 瞄准下半身朝向（死区迟滞 TPS 模型）
 
-`Unomata.Gameplay` 命名空间 SHALL 定义 `StrafeController` 类，继承 `MonoBehaviour`，实现 `IController`，`[DefaultExecutionOrder(10)]`（在 TPC LateUpdate 之后覆盖朝向），并持有 `PlayerInputModel` 引用以判断移动/静止。
+角色瞄准下半身朝向 SHALL 由唯一运动/朝向所有者在最终姿态求值前确定，不再要求在第三方控制器之后 LateUpdate 覆盖旋转。进入瞄准 SHALL 从当前朝向平滑收敛；移动瞄准 SHALL 使身体朝向跟随瞄准水平意图、位移方向独立，不因后退/侧移而转向运动方向。非瞄准时 SHALL 正常朝移动方向转身。
 
-`StrafeController.LateUpdate()` SHALL 在 `PlayerInputModel.IsAiming.Value == true` 时按以下规则控制角色下半身（整体 transform）绕世界 Y 轴的 Yaw：
-
-1. **进入瞄准当帧**：`transform.rotation` SHALL snap 对齐 `Camera.main` 的 Yaw（一次性，上下半身整体对齐）。
-2. **保持瞄准 + 移动**（`PlayerInputModel.Move.Value.sqrMagnitude` 大于移动阈值）：`transform.rotation` SHALL 锁定相机 Yaw（无死区），使 strafe BlendTree 的 MoveX/Y 方向正确。
-3. **保持瞄准 + 静止**（`Move ≈ 0`）：设 `delta = Mathf.DeltaAngle(身体Yaw, 相机Yaw)`：
-   - 若 `|delta| ≤ 死区阈值`（`SerializeField`，默认 10°）：`transform.rotation` SHALL 保持不变（脚定住）。
-   - 若 `|delta| > 死区阈值`：身体 Yaw SHALL 以可配置角速度（`SerializeField`，`Mathf.MoveTowardsAngle`）平滑追向相机 Yaw。
-4. `IsAiming == false` 时 SHALL 不干预 transform（TPC 默认控制朝向）。
-
-死区阈值与追身角速度 SHALL 暴露为 `SerializeField` 以便运行时调参。`StrafeController` SHALL 在覆盖 `transform.rotation` 后恢复 `PlayerCameraRoot` 的世界 rotation（防止破坏 TPC 的 Cinemachine 相机目标，避免抖动）。
+静止瞄准 SHALL 支持有迟滞的上身先行与身体追随；初始起转/停转阈值为 15°/5°，静止追随速度 360°/s，可在不降低 over-shoulder-aim 验收标准的前提下调校。进入瞄准的平滑对齐 SHALL 使用独立收敛过程，覆盖初始 180° 差值，不受静止追随速度限制。稳定有效瞄准时身体与瞄准水平意图的残差 SHALL 不超过 35°；跨 ±180°和方向反转不发生取长路径旋转或阈值抖动。身体旋转 SHALL 不破坏相机世界视线。
 
 #### Scenario: 进入瞄准瞬间下半身 snap 对齐相机
-
-- **WHEN** 角色朝向与相机 Yaw 相差较大时按下右键进入瞄准
-- **THEN** 当帧角色整体 SHALL 立刻转向相机 Yaw（无平滑过渡）
+- **WHEN** 角色与相机 Yaw 相差较大时按下右键
+- **THEN** 系统 SHALL 从当前姿态平滑对齐并在 0.35s 内收敛，替代旧瞬时 snap；期间结果标为过渡，不扭曲上身硬凑枪口
 
 #### Scenario: 静止瞄准小幅转视角时脚不动（上半身扭腰）
-
-- **WHEN** 瞄准且不移动，水平转动相机但幅度在死区阈值内
-- **THEN** 角色下半身（transform Yaw）SHALL 保持不动，仅上半身（`AnimatorAimBridge` yawOffset）跟随相机扭转
+- **WHEN** 静止瞄准的偏转保持在起转阈值内
+- **THEN** 下半身 SHALL 保持方向，上身/手臂自然配合枪口对准，脚不随每次细小鼠标变化抖动
 
 #### Scenario: 静止瞄准大幅转视角时下半身追身
-
-- **WHEN** 瞄准且不移动，水平转动相机超过死区阈值
-- **THEN** 角色下半身 SHALL 以配置角速度平滑转向相机 Yaw，残差收敛回死区内
+- **WHEN** 静止瞄准偏转超过起转阈值
+- **THEN** 身体 SHALL 配合转身动作追随，收敛至停转阈值，正常连续转向时残差满足限制，无突兀滑转或过度扭腰
 
 #### Scenario: 瞄准移动时下半身锁相机不转身
-
-- **WHEN** Play Mode 下长按鼠标右键进入瞄准，然后按 A（横移输入）
-- **THEN** 角色身体 SHALL 保持朝向相机方向（不转身），仅横向位移，播放 `AimWalk_FL/FR/BL/BR` 等侧移动画
+- **WHEN** 长按右键并向 A/D、后方或斜向移动（瞄准时均为走路）
+- **THEN** 身体 SHALL 跟随瞄准水平意图而非转向移动方向；实际位移和腿步方向一致，枪管满足 over-shoulder-aim 误差门槛
 
 #### Scenario: 非瞄准时移动正常转身
-
-- **WHEN** Play Mode 下不按右键（未瞄准），按 WASD
-- **THEN** 角色 SHALL 正常朝向移动方向转身（TPC 默认行为未受影响）
+- **WHEN** 松开右键后按 WASD
+- **THEN** 角色 SHALL 恢复面向运动方向的控制，速度、跳跃与碰撞行为不退化
 
 #### Scenario: 瞄准移动中 B1b.2 视觉验收不退化
+- **WHEN** 瞄准并移动，观察持枪和越肩镜头
+- **THEN** 持枪、双手和镜头 SHALL 正常、切换平滑，无动画/相机错误；验收不再绑定某一层名称、权重数值或虚拟相机优先级常量
 
-- **WHEN** Play Mode 下瞄准并移动，观察上半身动画与相机行为
-- **THEN** UpperBodyAim Layer 权重 SHALL 为 1，瞄准持枪动画 SHALL 正确叠加；双相机切换 SHALL 正常（PlayerAimCamera Priority=15）；Console 零红错
+#### Scenario: 跨越角度边界
+- **WHEN** 瞄准方向从 +179° 越过 -179°，或在起转阈值附近反复小幅移动
+- **THEN** 身体 SHALL 按最短连续方向响应，迟滞防止反复启停，不绕整圈或瞬间反向
 
 ### Requirement: StarterAssets 输入消费与 Look 直通
 
-运动适配层 SHALL 在第三方运动控制器消费当前帧输入之前提供 Model 的 Move/Sprint，并把 Jump 按下转换为一次可被消费的请求。Jump 消费后，SHALL NOT 因输入按钮仍按住而在每帧重新写入 true；释放再按下才能产生新请求。适配层 SHALL 不反向改写权威输入 Model，也不修改供应商运动控制器。
+运动适配层 SHALL 在当前帧运动消费前提供权威 Model 的 Move/Sprint，并将 Jump 新按下转换为一次可消费请求；消费后不得因按钮仍按住而再次注入，释放重按才可再跳。SHALL 不反向写权威输入 Model，不修改供应商源控制器；允许项目自有适配副本替代供应商实例，但 SHALL 只有一个活跃运动消费者。
 
-Look SHALL 由适配器接收当前 PlayerInput 实例的 Player/Look，作为相机表现输入直通 StarterAssetsInputs.look，不进入业务 Model，不恢复 SendMessages 或建立第二个写入入口。回调 SHALL 写入当前值而非重复累加鼠标位移，释放/取消或适配器停用时清零。适配器自身禁用、重新启用与销毁 SHALL 成对管理订阅并清理下游缓冲。
+Look SHALL 从当前 PlayerInput 实例直通唯一相机表现输入缓冲，不进入业务输入 Model、不恢复 SendMessages、不重复累加鼠标 delta。缓冲不要求固定为供应商字段，但现有 Look 数值、停止归零、当前控制方案与订阅清理语义 SHALL 保留。
 
 #### Scenario: SAInputAdapter 同步生效
 - **WHEN** 当前帧输入更新已将 Move 写为 Vector2(1,0)
-- **THEN** 第三方运动控制器在该帧消费时 SHALL 读取到该方向，不能额外等待一帧 LateUpdate；适配器不改写 Model
+- **THEN** 活跃项目运动消费者 SHALL 在该帧读取方向，不等待下一帧 LateUpdate，适配器不反向改写 Model
 
 #### Scenario: 已消费跳跃不被重复注入
-- **WHEN** 玩家按住空格完成一次跳跃，第三方控制器已消费/清除请求，直到角色再次落地都未松开
-- **THEN** 适配器 SHALL 不重复补发跳跃；释放并再次按下后能产生新的跳跃请求，不改变既有重力/落地规则
+- **WHEN** 按住空格完成起跳直到再次落地，运动消费者已清除该请求
+- **THEN** SHALL 不重复起跳；释放后重新按下可再次跳，重力和落地规则保持
 
 #### Scenario: Look 只有一个有效路由
-- **WHEN** InvokeCSharpEvents 下输入鼠标位移，再停止位移或取消动作
-- **THEN** Look SHALL 经适配器到达相机输入缓冲并在停止后归零，不依赖 StarterAssets 的 SendMessages 回调，不增加重复鼠标位移
+- **WHEN** 通过现有输入方案移动鼠标后停止或取消动作
+- **THEN** 相机 SHALL 每次只消费一份当前 Look 数值并在停止后归零，无额外旧输入入口或 delta 累加
 
 #### Scenario: 适配器禁用与恢复
-- **WHEN** 持续输入时禁用适配器，再重新启用并提供新输入
-- **THEN** 禁用时下游 move/look/jump/sprint SHALL 归零且不再被旧回调写入，恢复后每个输入只处理一次，无对象销毁后的回调异常
+- **WHEN** 持续输入期间停用适配器，再重新启用并输入
+- **THEN** 下游 move/look/jump/sprint SHALL 清零，旧回调不能写入，恢复后处理一次，销毁不产生回调异常
+
+#### Scenario: 项目适配不双重执行
+- **WHEN** 正式角色使用项目运动实现
+- **THEN** 供应商原运动组件 SHALL 不同时消费输入、移动胶囊或写旋转；现有输入资产 GUID、Map、动作和绑定保持
 
 ### Requirement: 输入生命周期清理与恢复
 
@@ -185,3 +178,35 @@ Look SHALL 由适配器接收当前 PlayerInput 实例的 Player/Look，作为�
 #### Scenario: 首次未启用与安全销毁
 - **WHEN** 组件在 Start 之前被禁用、绑定失败后销毁，或正常运行后停止 Play Mode
 - **THEN** 清理 SHALL 不抛异常、不隐式创建架构；首次真正启用可绑定，后续独立 Play 会话从中立输入开始
+
+### Requirement: 瞄准表现生命周期与当前状态一致
+
+相机、动画、身体转向和枪口表现接入时 SHALL 读取当前权威瞄准状态并订阅后续变化，不依赖必须先收到一次未来事件。停用/销毁 SHALL 解除本组件订阅并清理其姿态/镜头/输出；重新启用 SHALL 恢复当前状态，不累积订阅。清理 SHALL 不创建架构，失焦和输入源停用 SHALL 沿既有输入恢复契约使表现与输出失效。
+
+#### Scenario: 首次启用时已按住瞄准
+- **WHEN** 输入先进入瞄准，随后表现组件首次绑定或重新启用
+- **THEN** 表现 SHALL 立即读取当前意图并正常进入瞄准，不要求用户先松开再按一次才能同步
+
+#### Scenario: 组件停用不继续切镜头
+- **WHEN** 单独停用相机/姿态桥接组件，再改变瞄准输入
+- **THEN** 被停用组件 SHALL 不响应旧事件写镜头或姿态；恢复后从当前状态接续，三次循环不叠加回调
+
+#### Scenario: 失焦与场景退出
+- **WHEN** 按住瞄准/方向时切走窗口、停用输入源或退出场景
+- **THEN** 表现 SHALL 不保持失效瞄准结果，清理不抛异常/创建新架构；返回或新运行后按现有有效采样恢复，Jump/Fire 仍需释放重按
+
+### Requirement: 举枪奔跑仅允许纯向前输入
+
+系统 SHALL 保留原始 Sprint 按钮状态，以当前瞄准状态和运动方向计算实际奔跑许可。举枪时仅 Move.y > 0 且 Move.x 为零的前向输入可奔跑；数值零允许 0.0001 的浮点容差。A/S/D 及四个斜向 SHALL 使用走速，即使 Shift 仍按着。非瞄准奔跑规则不变。
+
+#### Scenario: 持续按住 Shift 换向
+- **WHEN** 举枪 W+Shift 奔跑后加入 A/D 或切到 S
+- **THEN** 同帧实际水平速度 SHALL 不超过走速，步态切到走路；原始 Sprint SHALL 仍为按住
+
+#### Scenario: 恢复前向与放下枪
+- **WHEN** 保持 Shift 后松回纯 W，或在侧向/后退时退出瞄准
+- **THEN** SHALL 恢复可用奔跑并自然加速，无须重新按 Shift
+
+#### Scenario: 空中与切入瞄准
+- **WHEN** 空中改变方向，或非瞄准侧跑时开始举枪
+- **THEN** 同一许可 SHALL 立即生效，禁止的瞄准方向不保留跑速；跳跃物理不变

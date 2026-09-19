@@ -22,11 +22,14 @@ namespace Unomata.Gameplay
             this.RegisterModel<PlayerInputModel>(new PlayerInputModel());
             this.RegisterModel<WaveModel>(new WaveModel());
             this.RegisterModel<AudioModel>(new AudioModel());
+            this.RegisterModel<AimModel>(new AimModel());
+            this.RegisterUtility<IAimWorldQuery>(new UnityAimWorldQuery());
 
             // ── System 层 ───────────────────────────────────────────────
             this.RegisterSystem<PlayerSystem>(new PlayerSystem());
             this.RegisterSystem<WaveSystem>(new WaveSystem());
             this.RegisterSystem<AudioSystem>(new AudioSystem());
+            this.RegisterSystem<IAimSystem>(new AimSystem());
         }
     }
 }

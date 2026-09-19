@@ -8,19 +8,15 @@
 
 ### Requirement: QF AudioModel 持有音频资产引用
 
-`AudioModel`（`AbstractModel`）SHALL 持有脚步音 `AudioClip[]` 与落地音 `AudioClip` 字段，由 `AudioBridge.Awake()` 在运行时注入；预留 `MasterVolume BindableProperty<float>` 字段。Model 层 SHALL NOT 包含任何播放逻辑。
+`AudioModel`（`AbstractModel`）SHALL 持有脚步音 `AudioClip[]`、落地音 `AudioClip` 与 `MasterVolume BindableProperty<float>`。音频表现启用绑定时 SHALL 经配置 Command 和 AudioSystem 注入资产，不直接写 Model；Model SHALL NOT 包含播放逻辑。
 
 #### Scenario: AudioBridge 注入后 Model 字段有效
-
-- **WHEN** Play Mode 启动，`AudioBridge.Awake()` 执行完毕
+- **WHEN** Play Mode 启动且 AudioBridge 完成启用绑定
 - **THEN** `AudioModel.FootstepClips.Length > 0` 且 `AudioModel.LandingClip != null`
 
 #### Scenario: Model 不含播放逻辑
-
 - **WHEN** 阅读 AudioModel.cs 源码
-- **THEN** 文件内 SHALL NOT 包含 `AudioSource`、`Play`、`Stop`、`PlayClipAtPoint`、`PlayOneShot` 等播放相关调用
-
----
+- **THEN** 文件内 SHALL NOT 包含 AudioSource 或任何播放、停止调用
 
 ### Requirement: QF AudioSystem 提供 PlayFootstep / PlayLand / Play 接口
 
@@ -67,99 +63,80 @@
 
 ### Requirement: AudioBridge 用 Update 相位驱动出声
 
-`AudioBridge`（MonoBehaviour + IController）SHALL 使用 **Update 相位驱动**方案触发音效，不依赖 AnimationEvent SendMessage：
+角色脚步/落地播放 SHALL 由实际动画相位和接地/落地状态驱动，不依赖供应商 AnimationEvent SendMessage。SHALL 支持非瞄准及瞄准方向运动、速度混合与状态过渡，不再只接受旧状态名、Walk/Run 白名单或单一 clip 权重超过一半的条件。
 
-- `Awake()` 把 `[SerializeField]` 引用写入 `AudioModel`；预筛脚步音 clip（≤0.313s）
-- `Start()` 订阅 `SoundPlayedEvent`，UnRegisterWhenGameObjectDestroyed
-- `Update()` 每帧读 `Animator.GetCurrentAnimatorStateInfo(0)` + `GetCurrentAnimatorClipInfo(0)`：
-  - **脚步音**：仅在 `Idle Walk Run Blend` 状态、dominant clip 为 Walk/Run（weight > 0.5）时，检测 normalizedTime 越过相位阈值触发；状态切入首帧重置 prevNormalizedTime 防误触发
-  - **落地音**：检测 Animator 切入 `JumpLand` 状态的首帧触发
-- `_footstepSrc`：切换 clip 后调 `Play()`（中断上一段，消除跑步重叠）
-- `_landSrc`：调 `PlayOneShot(LandingClip)`
-- Inspector 上 2 个 `AudioSource` 字段 + 1 个 `Animator` 字段
+现有脚步/落地资产、两个播放端、音频 Model 与外部 Command/Event 契约 SHALL 保留。脚步采样 SHALL 按实际使用动作标定，使用独立相位去重，保持每个有效落脚事件一声；脚步播放可中断前段避免重叠，落地每次一次。旧 Walk/Run 相位和短音筛选仅作现有动作的基线，不假定自动适用于新动作/速率。
 
-脚步相位阈值（B1c.1 程序化标定）：Walk LF=0.2864/RF=0.7990，Run LF=0.2714/RF=0.7889。
+组件接入 SHALL 初始化当前相位，停用/销毁 SHALL 清理订阅、停止本组件播放并重置检测状态，重新启用不补播停用期间的事件。SHALL 不把运行时辅助组件写回场景。
 
 #### Scenario: 脚步音链路端到端
-
-- **WHEN** Play Mode 下玩家走路（Idle Walk Run Blend 状态，Walk clip weight > 0.5）
-- **THEN** `AudioBridge.Update()` 检测 normalizedTime 越过 Walk 相位 → `_footstepSrc.Play()` → 有声，每步一声对齐脚部视觉
+- **WHEN** 非瞄准或瞄准时按任一方向行走并出现有效落脚
+- **THEN** SHALL 每步一声，声音与实际脚部接触相位协调，不因动画名称变化失声
 
 #### Scenario: 跑步音均匀无重叠
-
-- **WHEN** Play Mode 下玩家奔跑（Run clip weight > 0.5），约 0.333s 触发间距
-- **THEN** 听感均匀无叠播（筛后 clip ≤0.313s，Play() 自动中断上一段）
+- **WHEN** 非瞄准向前后、侧向、斜向奔跑，或举枪纯向前奔跑并切换到其他方向行走
+- **THEN** SHALL 按当前动作节奏播放，无重复叠播或与脚步明显错拍，不沿用旧固定间距假定
 
 #### Scenario: 落地音链路端到端
-
-- **WHEN** Play Mode 下玩家跳跃落地，Animator 切入 JumpLand 状态
-- **THEN** `AudioBridge.Update()` 检测首帧进入 JumpLand → `_landSrc.PlayOneShot()` → 有声，每次落地一声
+- **WHEN** 原地跳或移动跳结束并发生实际落地
+- **THEN** SHALL 每次落地只播放一声，不因多个过渡状态重复触发，也不因新状态名称漏播
 
 #### Scenario: 禁用 AudioBridge 后音效消失
-
-- **WHEN** Play Mode 下将 `Audio` GameObject 的 AudioBridge 组件设为 disabled
-- **THEN** 脚步音与落地音均无声（证明音频出口已完全迁移到 QF，TPC 不再出声）
+- **WHEN** 禁用音频桥接组件
+- **THEN** 本组件的脚步/落地 SHALL 停止且不再触发，没有旧角色或动画事件播放端继续重复出声
 
 #### Scenario: 静止站立无杂音
-
-- **WHEN** Play Mode 下玩家静止站立（Idle clip 主导）
-- **THEN** 无脚步音触发（dominant clip 为 Idle，不在 Walk/Run 白名单，Update 跳过）
+- **WHEN** 角色静止、被阻挡停住或处于无脚部接触的空中状态
+- **THEN** SHALL 不产生无实际落脚的移动脚步音；原地转身仅在存在真实踏步动作时按接触相位出声
 
 #### Scenario: 落地后回到静止无杂音
-
-- **WHEN** Play Mode 下玩家跳跃落地后回到 Idle Walk Run Blend 状态静止
-- **THEN** 切入首帧重置 prevNormalizedTime，不产生假脚步音
+- **WHEN** 落地后回到静止，或重新启用音频组件
+- **THEN** 相位 SHALL 从当前动作初始化，不补播跨越状态或停用期间的假脚步音
 
 #### Scenario: 事件订阅不泄漏
+- **WHEN** 反复禁用/启用、销毁音频对象或退出运行
+- **THEN** 订阅 SHALL 成对清理，一次请求最多一次播放，无销毁后回调和场景持久化运行辅助组件
 
-- **WHEN** `Audio` GameObject 被销毁（Play Mode 退出或 Scene 卸载）
-- **THEN** `SoundPlayedEvent` 订阅自动注销，不产生空引用回调
-
----
+#### Scenario: 多动作混合中仍有脚步
+- **WHEN** 方向或速度混合时没有任一 clip 的权重超过 0.5
+- **THEN** 有效落脚 SHALL 仍得到单次播放，不因主导权重门槛静音，不因多个参与 clip 重复出声
 
 ### Requirement: GameApp 注册 AudioModel 和 AudioSystem
 
-`GameApp.Init()` SHALL 按 `RegisterModel<AudioModel>` 先于 `RegisterSystem<AudioSystem>` 的顺序完成注册，并置于 PlayerSystem 之后。
+唯一业务入口 GameApp SHALL 按 Model → Utility → System 的依赖顺序注册，AudioModel 先于 AudioSystem，AudioSystem 保持在 PlayerSystem 之后。运行时 SHALL 能获取已初始化的音频 Model。
 
 #### Scenario: AudioModel 先于 AudioSystem 注册
-
 - **WHEN** 阅读 GameApp.cs 源码
-- **THEN** `RegisterModel<AudioModel>` 所在行号早于 `RegisterSystem<AudioSystem>` 所在行号
+- **THEN** AudioModel SHALL 在 Model 阶段注册，早于 AudioSystem 及 System 阶段
 
 #### Scenario: AudioSystem 可在运行时获取 AudioModel
-
-- **WHEN** Play Mode 下执行 `this.GetModel<AudioModel>()` 于任意 IController 内
-- **THEN** 返回非 null 的 AudioModel 实例
-
----
+- **WHEN** Play Mode 下经 GameApp 获取 AudioModel
+- **THEN** SHALL 返回非 null 的实例
 
 ### Requirement: PlayFootstepCommand / PlayLandCommand 封装音频调用
 
-`PlayFootstepCommand` 与 `PlayLandCommand` SHALL 继承 `AbstractCommand`，构造器接收 `Vector3 pos`，`OnExecute` 内仅调 `this.GetSystem<AudioSystem>()` 对应方法，无返回值，无副作用。（当前 AudioBridge 采用 Update 相位驱动，Command 层保留供外部显式调用。）
+脚步与落地 Command SHALL 将位置参数转交 AudioSystem 对应播放请求，无返回值，不复制领域规则或直接操作 AudioSource。动画相位及实际落地检测 SHALL 经同一 Command → System → Event 链路触发音频，保留外部显式调用能力。
 
 #### Scenario: PlayFootstepCommand 路由正确
-
-- **WHEN** `this.SendCommand(new PlayFootstepCommand(pos))` 被调用
-- **THEN** `AudioSystem.PlayFootstep(pos)` 被触发一次
+- **WHEN** 发出 PlayFootstepCommand(pos)
+- **THEN** AudioSystem.PlayFootstep(pos) SHALL 被触发一次
 
 #### Scenario: PlayLandCommand 路由正确
+- **WHEN** 发出 PlayLandCommand(pos)
+- **THEN** AudioSystem.PlayLand(pos) SHALL 被触发一次
 
-- **WHEN** `this.SendCommand(new PlayLandCommand(pos))` 被调用
-- **THEN** `AudioSystem.PlayLand(pos)` 被触发一次
 ### Requirement: SampleScene 音频生命周期辅助组件只在运行时创建
 
-SampleScene 的 Audio 对象 SHALL 保留 AudioBridge、两份 AudioSource 及原有音频/Animator 引用，但 SHALL NOT 持久化 QFramework 的运行时退订辅助组件或其内嵌 MonoScript。所需的运行时辅助组件 SHALL 由现有订阅链在启动时创建，退出或对象销毁时正常完成退订，不依赖一份失效的场景保存项。
-
-本次清理 SHALL 限于已经定位的 Audio 残留，不修改框架源码、供应商内容或音频播放规则，不通过批量移除未知组件消除错误。
+SampleScene 的 Audio 对象 SHALL 保留 AudioBridge、两份 AudioSource 和有效音频引用，Animator/姿态引用 SHALL 指向当前项目角色。SHALL NOT 持久化运行时退订辅助组件、内嵌临时 MonoScript 或缺失脚本槽。订阅 SHALL 成对释放；不再需要的辅助组件无需创建，也不得依赖失效的场景保存项。
 
 #### Scenario: 场景保存与重载后无残留
-- **WHEN** 清理并保存 SampleScene，再重新加载场景
-- **THEN** Audio SHALL 不包含保存的 UnRegisterOnDestroyTrigger 或缺失脚本槽，AudioBridge、两份 AudioSource 及其资产引用保持不变
+- **WHEN** 保存 SampleScene 并重新加载
+- **THEN** Audio SHALL 不含保存的 UnRegisterOnDestroyTrigger 或缺失脚本槽，两个播放端、原音频与当前角色引用保持有效
 
 #### Scenario: 多次启动与退出不报缺失脚本
-- **WHEN** 清理后的 SampleScene 至少完成两次独立 Play Mode 启动和退出
-- **THEN** SHALL 不再出现已定位到 Audio 的 Missing Script 日志，运行时辅助组件可正常创建，退出后不重新保存回场景
+- **WHEN** 正式场景至少完成两次独立 Play Mode 启动和退出
+- **THEN** SHALL 无音频 Missing Script 日志，所需运行辅助对象只在运行时创建且正常释放，不写回场景
 
 #### Scenario: 音频能力不回退
-- **WHEN** 在运行态检查音频资源并触发既有脚步和落地播放路径
-- **THEN** 音频模型及两个播放端 SHALL 保持有效，能播放原音频，无新增异常；该程序化验证不替代整体场景听感与输入手感验收
+- **WHEN** 检查音频资源并触发脚步和落地播放路径
+- **THEN** 音频 Model 与两个播放端 SHALL 有效、可播放原音频且无新增异常；整体听感另经用户运行验收

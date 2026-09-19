@@ -1,190 +1,156 @@
-using UnityEngine;
+using System.Collections.Generic;
 using QFramework;
+using UnityEngine;
 
 namespace Unomata.Gameplay
 {
-    /// <summary>
-    /// 音频 MonoBehaviour 桥接层（QFramework IController）。
-    ///
-    /// 职责：
-    ///   1. Awake() — 把 Inspector 上的 AudioClip 引用注入到 <see cref="AudioModel"/>
-    ///   2. Start()  — 订阅 QF Event（SoundPlayedEvent，供未来枪声/命中音扩展）
-    ///   3. Update() — 相位驱动脚步音：每帧读 Animator normalizedTime，越过相位阈值时触发
-    ///   4. 落地检测：每帧检测 Animator 是否进入 JumpLand 状态，进入首帧触发落地音
-    ///
-    /// 相位阈值（B1c.1 程序化标定）：
-    ///   Walk: LF=0.2864  RF=0.7990
-    ///   Run:  LF=0.2714  RF=0.7889
-    ///
-    /// Inspector 配置要求：
-    ///   _playerAnimator : PlayerArmature 上的 Animator
-    ///   _footstepClips  : SA 10 段脚步 wav
-    ///   _landingClip    : 落地 wav
-    ///   _footstepSrc    : 脚步 AudioSource（loop=false, playOnAwake=false）
-    ///   _landSrc        : 落地 AudioSource（loop=false, playOnAwake=false）
-    /// </summary>
+    /// <summary>Audio view consumes evaluated motion phases; it never owns gameplay input or movement state.</summary>
+    [DefaultExecutionOrder(750)]
     public class AudioBridge : MonoBehaviour, IController
     {
-        IArchitecture IBelongToArchitecture.GetArchitecture() => GameApp.Interface;
+        IArchitecture IBelongToArchitecture.GetArchitecture()=>GameApp.Interface;
+        [SerializeField] private Animator _playerAnimator;
+        [SerializeField] private AudioClip[] _footstepClips;
+        [SerializeField] private AudioClip _landingClip;
+        [SerializeField] private AudioSource _footstepSrc;
+        [SerializeField] private AudioSource _landSrc;
+        [SerializeField] private PlayerAimPresentation _pose;
+        [SerializeField] private FootstepPhaseProfile _phaseProfile;
+        private const float MaxFootstepLength=0.313f;
+        private readonly List<AnimatorClipInfo> _clips=new List<AnimatorClipInfo>(12);
+        private AudioClip[] _filtered;
+        private IArchitecture _architecture;
+        private AudioModel _model;
+        private IUnRegister _footSubscription,_landSubscription,_soundSubscription;
+        private bool _phaseReady,_landingReady,_legacyLand;
+        private int _stateHash,_leftCycle,_rightCycle,_lastLandingSequence;
+        private float _leftPhase,_rightPhase,_previousTime;
+        public int FootstepPlayCount { get; private set; }
+        public int LandPlayCount { get; private set; }
+        public int LastFootstepFrame { get; private set; }=-1;
+        public int LastLandFrame { get; private set; }=-1;
+        public bool FootstepIsPlaying=>_footstepSrc!=null&&_footstepSrc.isPlaying;
+        public bool LandIsPlaying=>_landSrc!=null&&_landSrc.isPlaying;
 
-        // ── Inspector 引用 ────────────────────────────────────────
-        [SerializeField] private Animator     _playerAnimator;
-        [SerializeField] private AudioClip[]  _footstepClips;
-        [SerializeField] private AudioClip    _landingClip;
-        [SerializeField] private AudioSource  _footstepSrc;
-        [SerializeField] private AudioSource  _landSrc;
-
-        // ── 相位阈值常量（B1c.1 程序化标定） ──────────────────────
-        // Walk clip normalizedTime 脚步相位
-        private static readonly float[] WalkPhases = { 0.2864f, 0.7990f };
-        // Run clip normalizedTime 脚步相位
-        private static readonly float[] RunPhases  = { 0.2714f, 0.7889f };
-
-        // 脚步音最大时长过滤：≤0.313s（排除与 Run 触发间距过近的长片段）
-        private const float MaxFootstepLength = 0.313f;
-
-        // Animator 状态 hash（避免每帧字符串比较）
-        private static readonly int WalkRunBlendHash = Animator.StringToHash("Idle Walk Run Blend");
-        private static readonly int JumpLandHash     = Animator.StringToHash("JumpLand");
-
-        // ── 运行时状态 ────────────────────────────────────────────
-        private AudioClip[] _filteredFootstepClips;
-        private float       _prevNormalizedTime;
-        private bool        _wasInLandState;
-        private bool        _wasInWalkRunBlend;   // 上帧是否在 WalkRunBlend 状态
-
-        // ── Unity 生命周期 ────────────────────────────────────────
         private void Awake()
         {
-            // 注入 AudioModel
-            var model = this.GetModel<AudioModel>();
-            model.FootstepClips = _footstepClips;
-            model.LandingClip   = _landingClip;
-
-            // 预筛脚步音
-            if (_footstepClips != null && _footstepClips.Length > 0)
-            {
-                var list = new System.Collections.Generic.List<AudioClip>();
-                foreach (var c in _footstepClips)
-                    if (c != null && c.length <= MaxFootstepLength) list.Add(c);
-                _filteredFootstepClips = list.Count > 0 ? list.ToArray() : _footstepClips;
-                Debug.Log($"[AudioBridge] 脚步音池: {_footstepClips.Length} → {_filteredFootstepClips.Length} 段 (≤{MaxFootstepLength}s)");
-            }
-            else
-            {
-                _filteredFootstepClips = _footstepClips;
-            }
+            var filtered=new List<AudioClip>();
+            if(_footstepClips!=null)foreach(var clip in _footstepClips)
+                if(clip!=null&&clip.length<=MaxFootstepLength)filtered.Add(clip);
+            _filtered=filtered.Count>0?filtered.ToArray():_footstepClips;
         }
 
-        private void Start()
+        private void OnEnable(){Bind();ResetPhases();}
+        private void Bind()
         {
-            // 预留：通用音效 SoundPlayedEvent（枪声/命中音/UI 音 Phase B2/3 接入）
-            this.RegisterEvent<SoundPlayedEvent>(OnSoundPlayed)
-                .UnRegisterWhenGameObjectDestroyed(gameObject);
+            if(_architecture!=null && ReferenceEquals(_architecture.GetModel<AudioModel>(),_model))return;
+            Unsubscribe();
+            _architecture=GameApp.Interface;
+            _model=_architecture.GetModel<AudioModel>();
+            _architecture.SendCommand(new ConfigureAudioAssetsCommand(_footstepClips,_landingClip));
+            _footSubscription=_architecture.RegisterEvent<FootstepPlayedEvent>(e=>PlayFootstep());
+            _landSubscription=_architecture.RegisterEvent<LandPlayedEvent>(e=>PlayLand());
+            _soundSubscription=_architecture.RegisterEvent<SoundPlayedEvent>(OnSoundPlayed);
         }
 
-        private void Update()
+        private void LateUpdate()
         {
-            if (_playerAnimator == null) return;
-
-            UpdateFootstep();
-            UpdateLanding();
-        }
-
-        // ── 相位驱动脚步音 ────────────────────────────────────────
-        private void UpdateFootstep()
-        {
-            // 只在 WalkRunBlend 状态处理脚步
-            var info = _playerAnimator.GetCurrentAnimatorStateInfo(0);
-            bool inWalkRun = info.IsName("Idle Walk Run Blend");
-
-            if (!inWalkRun)
+            Bind();
+            if(_pose!=null)
             {
-                _wasInWalkRunBlend = false;
-                return;
-            }
-
-            float curr = info.normalizedTime % 1f;
-
-            // 刚切入 WalkRunBlend（从其他状态过来）：重置 prev，跳过本帧相位检测，防误触发
-            if (!_wasInWalkRunBlend)
-            {
-                _prevNormalizedTime = curr;
-                _wasInWalkRunBlend  = true;
-                return;
-            }
-
-            float prev = _prevNormalizedTime;
-            _prevNormalizedTime = curr;
-
-            // 获取主导 clip
-            var clipInfos = _playerAnimator.GetCurrentAnimatorClipInfo(0);
-            if (clipInfos == null || clipInfos.Length == 0) return;
-
-            AnimatorClipInfo dominant = clipInfos[0];
-            foreach (var ci in clipInfos)
-                if (ci.weight > dominant.weight) dominant = ci;
-
-            // 只有权重 > 0.5 的主导 clip 才触发
-            if (dominant.weight < 0.5f) return;
-
-            // 选相位表：只有 Walk 或 Run clip 才触发脚步音，Idle 跳过
-            float[] phases;
-            if (dominant.clip.name == "Run")        phases = RunPhases;
-            else if (dominant.clip.name == "Walk")  phases = WalkPhases;
-            else return; // Idle 或其他 clip，不触发脚步音
-
-            // 检测是否越过任意相位（处理循环回绕）
-            foreach (var phase in phases)
-            {
-                bool crossed;
-                if (prev <= curr)
-                    // 正常前进
-                    crossed = prev < phase && curr >= phase;
-                else
-                    // 循环回绕（curr 跨过 1 归零）
-                    crossed = prev < phase || curr >= phase;
-
-                if (crossed)
+                if(!_pose.IsInitialized || _pose.PoseFrame!=Time.frameCount)return;
+                var motor=_pose.Motor;
+                if(!_landingReady){_lastLandingSequence=motor.LandingSequence;_landingReady=true;}
+                if(motor.LandingSequence!=_lastLandingSequence)
                 {
-                    PlayFootstep();
-                    break; // 同帧只触发一次
+                    _lastLandingSequence=motor.LandingSequence;
+                    _architecture.SendCommand(new PlayLandCommand(_pose.transform.position));
                 }
+                if(!motor.IsGrounded || (motor.PlanarSpeed<0.05f&&Mathf.Abs(_pose.TurnBlend)<5))
+                {_phaseReady=false;return;}
+                _pose.GetMovementClips(_clips);
+                UpdatePhases(_pose.MovementState,_pose.transform.position);
+            }
+            else if(_playerAnimator!=null)
+            {
+                var state=_playerAnimator.GetCurrentAnimatorStateInfo(0);
+                bool land=state.IsName("JumpLand");
+                if(land&&!_legacyLand)_architecture.SendCommand(new PlayLandCommand(_playerAnimator.transform.position));
+                _legacyLand=land;
+                if(!state.IsName("Idle Walk Run Blend")){_phaseReady=false;return;}
+                _playerAnimator.GetCurrentAnimatorClipInfo(0,_clips);
+                UpdatePhases(state,_playerAnimator.transform.position);
             }
         }
 
-        // ── 落地检测 ─────────────────────────────────────────────
-        private void UpdateLanding()
+        private void UpdatePhases(AnimatorStateInfo state,Vector3 position)
         {
-            var info = _playerAnimator.GetCurrentAnimatorStateInfo(0);
-            bool inLandState = info.IsName("JumpLand");
-
-            // 检测进入落地状态的首帧
-            if (inLandState && !_wasInLandState)
-                PlayLand();
-
-            _wasInLandState = inLandState;
+            Vector2 left=Vector2.zero,right=Vector2.zero;
+            float total=0;bool loops=false;
+            foreach(var ci in _clips)
+            {
+                if(ci.clip==null||ci.weight<=0.0001f)continue;
+                float l,r;
+                bool has=_phaseProfile!=null&&_phaseProfile.TryGet(ci.clip,out l,out r);
+                if(!has)
+                {
+                    if(_pose!=null)continue;
+                    if(ci.clip.name=="Walk"){l=0.2864f;r=0.7990f;}
+                    else if(ci.clip.name=="Run"){l=0.2714f;r=0.7889f;}
+                    else continue;
+                }
+                else _phaseProfile.TryGet(ci.clip,out l,out r);
+                left+=Circle(l)*ci.weight;right+=Circle(r)*ci.weight;
+                total+=ci.weight;loops|=ci.clip.isLooping;
+            }
+            if(total<=0.0001f){_phaseReady=false;return;}
+            float lp=Phase(left),rp=Phase(right);
+            float time=loops?state.normalizedTime:Mathf.Clamp01(state.normalizedTime);
+            if(!_phaseReady||state.fullPathHash!=_stateHash||time<_previousTime)
+            {
+                _phaseReady=true;_stateHash=state.fullPathHash;
+                _leftPhase=lp;_rightPhase=rp;
+                _leftCycle=Mathf.FloorToInt(time-lp);_rightCycle=Mathf.FloorToInt(time-rp);
+                _previousTime=time;return;
+            }
+            _leftPhase+=Mathf.DeltaAngle(_leftPhase*360,lp*360)/360;
+            _rightPhase+=Mathf.DeltaAngle(_rightPhase*360,rp*360)/360;
+            int lc=Mathf.FloorToInt(time-_leftPhase),rc=Mathf.FloorToInt(time-_rightPhase);
+            if(lc>_leftCycle)_architecture.SendCommand(new PlayFootstepCommand(position));
+            if(rc>_rightCycle)_architecture.SendCommand(new PlayFootstepCommand(position));
+            _leftCycle=lc;_rightCycle=rc;_previousTime=time;
         }
-
-        // ── 播放方法 ──────────────────────────────────────────────
+        private static Vector2 Circle(float phase)=>new Vector2(Mathf.Cos(phase*Mathf.PI*2),Mathf.Sin(phase*Mathf.PI*2));
+        private static float Phase(Vector2 circle)=>Mathf.Repeat(Mathf.Atan2(circle.y,circle.x)/(Mathf.PI*2),1);
         private void PlayFootstep()
         {
-            if (_footstepSrc == null || _filteredFootstepClips == null || _filteredFootstepClips.Length == 0) return;
-            var clip = _filteredFootstepClips[Random.Range(0, _filteredFootstepClips.Length)];
-            _footstepSrc.clip = clip;
-            _footstepSrc.Play();
+            if(!isActiveAndEnabled||_footstepSrc==null||_filtered==null||_filtered.Length==0)return;
+            var clip=_filtered[Random.Range(0,_filtered.Length)];
+            if(clip==null)return;
+            _footstepSrc.clip=clip;_footstepSrc.Play();
+            FootstepPlayCount++;LastFootstepFrame=Time.frameCount;
         }
-
         private void PlayLand()
         {
-            if (_landSrc == null || _landingClip == null) return;
-            _landSrc.PlayOneShot(_landingClip);
+            if(!isActiveAndEnabled||_landSrc==null||_landingClip==null)return;
+            _landSrc.PlayOneShot(_landingClip);LandPlayCount++;LastLandFrame=Time.frameCount;
         }
-
-        // ── 通用音效（预留） ──────────────────────────────────────
         private void OnSoundPlayed(SoundPlayedEvent e)
         {
-            // TODO B2a/B2b: 按 SoundId 分发到对应 AudioSource
+            // Non-locomotion sound types remain reserved for subsequent gameplay changes.
         }
+        private void ResetPhases(){_phaseReady=false;_landingReady=false;_legacyLand=false;}
+        private void Unsubscribe()
+        {
+            _footSubscription?.UnRegister();_landSubscription?.UnRegister();_soundSubscription?.UnRegister();
+            _footSubscription=_landSubscription=_soundSubscription=null;
+        }
+        private void OnDisable()
+        {
+            Unsubscribe();_architecture=null;_model=null;ResetPhases();
+            if(_footstepSrc!=null)_footstepSrc.Stop();
+            if(_landSrc!=null)_landSrc.Stop();
+        }
+        private void OnDestroy(){Unsubscribe();}
     }
 }
