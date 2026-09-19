@@ -1,35 +1,28 @@
 using QFramework;
-
 namespace Unomata.Gameplay
 {
-    /// <summary>
-    /// UNOMATA QFramework Architecture 入口类。
-    ///
-    /// 已注册：
-    ///   Model：PlayerModel / WaveModel / AudioModel
-    ///   System：PlayerSystem / WaveSystem / AudioSystem
-    ///   Commands（骨架）：StartHackCommand / SelectCardCommand / HealCommand / DamagePlayerCommand
-    ///                     PlayFootstepCommand / PlayLandCommand
-    ///
-    /// Phase 4 补充：HackSystem / SyncRateModel / SyncRateSystem 等。
-    /// </summary>
+    /// <summary>Single gameplay composition root. Register data, utilities, then dependent systems.</summary>
     public class GameApp : Architecture<GameApp>
     {
         protected override void Init()
         {
-            // ── Model 层（先于 System 注册）────────────────────────────
             this.RegisterModel<PlayerModel>(new PlayerModel());
             this.RegisterModel<PlayerInputModel>(new PlayerInputModel());
             this.RegisterModel<WaveModel>(new WaveModel());
             this.RegisterModel<AudioModel>(new AudioModel());
             this.RegisterModel<AimModel>(new AimModel());
-            this.RegisterUtility<IAimWorldQuery>(new UnityAimWorldQuery());
+            this.RegisterModel<EnemyModel>(new EnemyModel());
+            this.RegisterModel<ShootingModel>(new ShootingModel());
 
-            // ── System 层 ───────────────────────────────────────────────
+            this.RegisterUtility<IAimWorldQuery>(new UnityAimWorldQuery());
+            this.RegisterUtility<IShotWorldQuery>(new UnityShotWorldQuery());
+
             this.RegisterSystem<PlayerSystem>(new PlayerSystem());
             this.RegisterSystem<WaveSystem>(new WaveSystem());
             this.RegisterSystem<AudioSystem>(new AudioSystem());
             this.RegisterSystem<IAimSystem>(new AimSystem());
+            this.RegisterSystem<EnemySystem>(new EnemySystem());
+            this.RegisterSystem<ShootingSystem>(new ShootingSystem());
         }
     }
 }

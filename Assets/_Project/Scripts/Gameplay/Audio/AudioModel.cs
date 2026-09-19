@@ -22,6 +22,8 @@ namespace Unomata.Gameplay
         /// <summary>主音量（0~1），预留给 Phase 3 音量 UI。默认 1f。</summary>
         public BindableProperty<float> MasterVolume = new BindableProperty<float>(1f);
 
+        public CombatAudioSettings Combat { get; internal set; }
+
         protected override void OnInit()
         {
             // 字段由 AudioBridge.Awake() 运行时注入，此处无需初始化。

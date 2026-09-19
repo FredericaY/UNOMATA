@@ -1922,6 +1922,9 @@ GameObject:
   - component: {fileID: 5812756134300204044}
   - component: {fileID: 2619440552013925162}
   - component: {fileID: 3845948932568603478}
+  - component: {fileID: 6209060639342072231}
+  - component: {fileID: 498570169054316292}
+  - component: {fileID: 5813568828232995991}
   m_Layer: 8
   m_Name: ShoulderAimPlayer
   m_TagString: Player
@@ -2237,6 +2240,7 @@ MonoBehaviour:
   _torsoRig: {fileID: 7386937852080934823}
   _handsRig: {fileID: 7975978905240601082}
   _profile: {fileID: 11400000, guid: 2c9d768f1ed25bb42a61d96c620fd073, type: 2}
+  _shootingFeedback: {fileID: 11400000, guid: bdeed0f0f9bfdaa45ba3bb9c073d9660, type: 2}
   _brain: {fileID: 0}
   _aimCamera: {fileID: 0}
   _renderCamera: {fileID: 0}
@@ -2254,6 +2258,48 @@ MonoBehaviour:
   - {fileID: 2520421665661328809}
   - {fileID: 318779176033836681}
   - {fileID: 3610063340737902631}
+--- !u!114 &6209060639342072231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1656044021647475745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b1e17e12c20afb489ba1ebd460cc684, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _pose: {fileID: 3845948932568603478}
+  _profile: {fileID: 11400000, guid: dbe5615b5edb8024c8175bc7a6f90b9a, type: 2}
+--- !u!114 &498570169054316292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1656044021647475745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2509b9350e3072488a142800252a97a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _profile: {fileID: 11400000, guid: bdeed0f0f9bfdaa45ba3bb9c073d9660, type: 2}
+  _pose: {fileID: 3845948932568603478}
+--- !u!114 &5813568828232995991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1656044021647475745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 808d472bef035a0429b9d9c8fb74a32d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _profile: {fileID: 11400000, guid: bdeed0f0f9bfdaa45ba3bb9c073d9660, type: 2}
+  _pose: {fileID: 3845948932568603478}
 --- !u!1 &1742785497239857871
 GameObject:
   m_ObjectHideFlags: 0

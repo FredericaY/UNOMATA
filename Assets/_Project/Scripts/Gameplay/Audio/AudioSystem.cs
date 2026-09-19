@@ -37,6 +37,20 @@ namespace Unomata.Gameplay
         /// 若 AudioModel.FootstepClips 未注入（null/空），不出声并打 Warning。
         /// </summary>
         /// <param name="pos">发声世界坐标（来自 PlayerArmature.transform.position）。</param>
+        public void SetMasterVolume(float volume)
+        {
+            if (!CombatNumbers.IsFinite(volume) || volume < 0 || volume > 1)
+            { Debug.LogWarning("[AudioSystem] Master volume must be in [0,1]."); return; }
+            _audioModel.MasterVolume.Value = volume;
+        }
+
+        public void ConfigureCombat(CombatAudioSettings settings)
+        {
+            if (settings == null) { Debug.LogWarning("[AudioSystem] Missing combat settings."); return; }
+            if (!settings.TryValidate(out var error)) { Debug.LogWarning("[AudioSystem] " + error); return; }
+            _audioModel.Combat = settings;
+        }
+
         public void PlayFootstep(Vector3 pos)
         {
             if (_audioModel.FootstepClips == null || _audioModel.FootstepClips.Length == 0)

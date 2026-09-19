@@ -21,6 +21,7 @@ namespace Unomata.Gameplay
         [SerializeField] private Rig _torsoRig;
         [SerializeField] private Rig _handsRig;
         [SerializeField] private PlayerAimProfile _profile;
+        [SerializeField] private RifleFeedbackProfile _shootingFeedback;
         [SerializeField] private CinemachineBrain _brain;
         [SerializeField] private CinemachineVirtualCamera _aimCamera;
         [SerializeField] private Camera _renderCamera;
@@ -37,6 +38,9 @@ namespace Unomata.Gameplay
         [SerializeField] private Transform[] _torsoTargets = new Transform[3];
 
         private IArchitecture _architecture;
+        private IUnRegister _shotSubscription;
+        private float _recoilOffset;
+        public float RecoilOffset => _recoilOffset;
         private PlayerInputModel _input;
         private AimModel _aimModel;
         private Guid _context;
@@ -159,6 +163,9 @@ namespace Unomata.Gameplay
             _motionBlend=_motionBlendVelocity=Vector2.zero;
             _cameraPriority=int.MinValue;
             _lastEvaluationFrame=-1;
+            _shotSubscription?.UnRegister();
+            _shotSubscription=_architecture.RegisterEvent<ShotFiredEvent>(OnShotFeedback);
+            _recoilOffset=0;
             _initialized=true;
             return true;
         }
@@ -175,6 +182,9 @@ namespace Unomata.Gameplay
             _lastEvaluationFrame=Time.frameCount;
             bool aiming=_focused && _input.IsAiming.Value;
             float dt=Time.deltaTime;
+            if (_shootingFeedback!=null && _shootingFeedback.RecoilRecovery>0)
+                _recoilOffset=Mathf.MoveTowards(_recoilOffset,0,dt*_shootingFeedback.RecoilDistance/_shootingFeedback.RecoilRecovery);
+            else _recoilOffset=0;
             _aimWeight=Mathf.MoveTowards(_aimWeight,aiming?1:0,dt/_profile.BlendDuration);
             int priority=aiming?15:0;
             if (_cameraPriority!=priority)
@@ -237,7 +247,7 @@ namespace Unomata.Gameplay
 
             var viewRotation=Quaternion.Euler(_motor.OrbitPitch,_motor.OrbitYaw,0);
             var shoulder=(_rightUpperArm.position+_leftUpperArm.position)*0.5f;
-            var desiredPivot=shoulder+viewRotation*_profile.GripOffset;
+            var desiredPivot=shoulder+viewRotation*(_profile.GripOffset-Vector3.forward*_recoilOffset);
             var lowerPosition=baseRightPosition;
             var lowerRotation=baseRightRotation;
             bool visualAim=aiming || _aimWeight>0;
@@ -298,8 +308,17 @@ namespace Unomata.Gameplay
         private void OnDisable() { Release(); }
         private void OnDestroy() { Release(); }
 
+        private void OnShotFeedback(ShotFiredEvent shot)
+        {
+            if (_shootingFeedback==null || !_focused || !isActiveAndEnabled || shot.AimContext!=_context) return;
+            _recoilOffset=_shootingFeedback.RecoilDistance;
+        }
+
         private void Release()
         {
+            _shotSubscription?.UnRegister();
+            _shotSubscription=null;
+            _recoilOffset=0;
             if(!_initialized && !_graph.IsValid())return;
             if(ContextAlive)_architecture.SendCommand(new InvalidateAimCommand(_context,Time.frameCount,true));
             if(_rigBuilder!=null)_rigBuilder.Clear();

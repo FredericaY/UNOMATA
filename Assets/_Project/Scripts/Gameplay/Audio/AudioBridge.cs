@@ -21,7 +21,7 @@ namespace Unomata.Gameplay
         private AudioClip[] _filtered;
         private IArchitecture _architecture;
         private AudioModel _model;
-        private IUnRegister _footSubscription,_landSubscription,_soundSubscription;
+        private IUnRegister _footSubscription,_landSubscription;
         private bool _phaseReady,_landingReady,_legacyLand;
         private int _stateHash,_leftCycle,_rightCycle,_lastLandingSequence;
         private float _leftPhase,_rightPhase,_previousTime;
@@ -50,7 +50,6 @@ namespace Unomata.Gameplay
             _architecture.SendCommand(new ConfigureAudioAssetsCommand(_footstepClips,_landingClip));
             _footSubscription=_architecture.RegisterEvent<FootstepPlayedEvent>(e=>PlayFootstep());
             _landSubscription=_architecture.RegisterEvent<LandPlayedEvent>(e=>PlayLand());
-            _soundSubscription=_architecture.RegisterEvent<SoundPlayedEvent>(OnSoundPlayed);
         }
 
         private void LateUpdate()
@@ -135,15 +134,11 @@ namespace Unomata.Gameplay
             if(!isActiveAndEnabled||_landSrc==null||_landingClip==null)return;
             _landSrc.PlayOneShot(_landingClip);LandPlayCount++;LastLandFrame=Time.frameCount;
         }
-        private void OnSoundPlayed(SoundPlayedEvent e)
-        {
-            // Non-locomotion sound types remain reserved for subsequent gameplay changes.
-        }
         private void ResetPhases(){_phaseReady=false;_landingReady=false;_legacyLand=false;}
         private void Unsubscribe()
         {
-            _footSubscription?.UnRegister();_landSubscription?.UnRegister();_soundSubscription?.UnRegister();
-            _footSubscription=_landSubscription=_soundSubscription=null;
+            _footSubscription?.UnRegister();_landSubscription?.UnRegister();
+            _footSubscription=_landSubscription=null;
         }
         private void OnDisable()
         {

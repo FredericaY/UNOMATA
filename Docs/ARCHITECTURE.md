@@ -1,16 +1,16 @@
 # 架构与实现边界
 
-> 更新：2026-09-18。下面先描述当前代码，再描述目标；尚未实现的模块不会作为现有依赖使用。
+> 更新：2026-09-19。下面先描述当前代码，再描述目标。瞄准射击与胶囊受击已接入场景，自动验证与用户视听、真实切窗验收均已通过，正式规格已同步归档，见 [射击基线](SHOOTING_BASELINE.md)。
 
 ## 当前部署
 
 | 部分 | 路径 | 实际内容 |
 |---|---|---|
 | 独立 Core | `CardChainCore/src/Unomata.Core/` | net8.0 纯 C#；类型、规则、状态更新、选项生成 |
-| Unity Gameplay | `Assets/_Project/Scripts/Gameplay/` | GameApp、Player、Commands、Events、Audio、Wave 骨架 |
-| Unity Core / UI / Linking | `Assets/_Project/Scripts/` 对应目录 | 尚无实现代码；独立 Core 尚未接入 Unity |
-| 原型场景 | `Assets/_Project/Scenes/SampleScene.unity` | 当前角色与瞄准试验场景 |
-| 隔离资产验证 | `Assets/_Project/Scenes/Sandbox/` | Audio、BT、MechPack、SciFiArena、SciFiEffects |
+| Unity Gameplay | `Assets/_Project/Scripts/Gameplay/` | GameApp、Player、Commands、Events、Audio、Shooting、Enemy 与 Wave 骨架 |
+| Unity Core / UI / Linking | `Assets/_Project/Scripts/` 对应目录 | 骇入相关目录尚无实现；独立 Core 尚未接入 Unity；射击准星和敌人头顶状态 UI 由 Gameplay 表现提供 |
+| 原型场景 | `Assets/_Project/Scenes/SampleScene.unity` | 当前角色、机甲射击与状态 UI 场景；射击与机甲表现均已验收归档 |
+| 隔离资产验证 | `Assets/_Project/Scenes/Sandbox/` | Audio、BT、MechPack、SciFiArena、SciFiEffects、Shooting |
 
 环境版本见 [DEPENDENCIES.md](DEPENDENCIES.md)；项目没有来自 VG2 的 GameArchitecture 或 ShutdownIfInitialized API，不可直接复制其业务生命周期约定。
 
@@ -20,12 +20,12 @@
 
 | 层 | 已注册 / 已存在 | 实现边界 |
 |---|---|---|
-| Model | PlayerModel、PlayerInputModel、WaveModel、AudioModel、AimModel | 玩家 HP/瞄准镜像、输入、波次占位、音频数据 |
-| Utility | IAimWorldQuery / UnityAimWorldQuery | 相机/枪口射线与内部起点检查；过滤自身与触发器 |
-| System | PlayerSystem、WaveSystem、AudioSystem、IAimSystem / AimSystem | 输入镜像、波次骨架、音频事实事件、瞄准几何与状态 |
+| Model | PlayerModel、PlayerInputModel、WaveModel、AudioModel、AimModel、EnemyModel、ShootingModel | 玩家/输入/波次占位/音频/瞄准、目标 HP/R/H/身份、射击冷却与序号 |
+| Utility | IAimWorldQuery / UnityAimWorldQuery、IShotWorldQuery / UnityShotWorldQuery | 相机/枪口目标查询与实际射击命中、内部起点检查；自身/Trigger 过滤及密集查询兜底 |
+| System | PlayerSystem、WaveSystem、AudioSystem、IAimSystem / AimSystem、EnemySystem、ShootingSystem | 输入镜像、波次骨架、音频事件、瞄准、受击/死亡、门控与射速；Enemy/Audio 先于 Shooting 注册 |
 | Command | SetMove/Jump/Sprint/FireInput、SetAimState、PlayFootstep、PlayLand | 输入与音频入口；ResetPlayerInputCommand 统一清理业务输入 |
 | Command 骨架 | StartHack、SelectCard、Heal、DamagePlayer | OnExecute 仍为空，不算功能完成 |
-| 表现/适配 | PlayerController、SAInputAdapter、PlayerMotor、PlayerAimPresentation、AudioBridge | 输入、运动/朝向、最终镜头/动画/武器/双臂、相位音频 |
+| 表现/适配 | PlayerController、SAInputAdapter、PlayerMotor、PlayerAimPresentation、AudioBridge、ShootingController、EnemyController、EnemyPresentationView、EnemyStatusView、ShootingFeedbackView、CombatAudioView | 输入/运动/姿态、射击驱动、碰撞注册、效果及独立战斗声音；表现不持有 HP 或重复伤害 |
 
 当前没有正式的跨场景架构启动/关闭和完整重开流程。新增生命周期功能时须先设计，再同步契约。
 
@@ -43,11 +43,15 @@ PlayerMotor 位移/身体朝向 → PlayerAimPresentation.LateUpdate (500)
   → 采样当帧手/肩 → PrepareAimFrameCommand → AimSystem → AimPoseQuery
   → 独立武器/握把目标 → 同图零时间求值双臂约束
   → CompleteAimFrameCommand（实际枪口、手部可达性）→ AimModel 最终快照
-  → AudioBridge (750) → Command / AudioSystem / Event → 两个 AudioSource
+  → ShootingController (600) → TickShootingCommand → ShootingSystem
+      → IShotWorldQuery → EnemySystem（HP/减免/增伤/死亡）
+      → ShotFiredEvent / EnemyDamagedEvent / EnemyDiedEvent → VFX / 简单提示
+      → AudioSystem.Play → SoundPlayedEvent → CombatAudioView（24 声部）
+  → AudioBridge (750) → Command / AudioSystem / Event → 原两个 AudioSource
   → MagicaCloth AfterLateUpdate
 ```
 
-本轮实现已接入 SampleScene，完整矩阵与用户视觉验收仍在进行，不能将接线完成等同 change 已完成。旧 StrafeController / AnimatorAimBridge / CameraAimBridge / AimTargetDriver 不再挂载到交付角色；原脚本/控制器保留历史参考，不能与新方案共同启用。
+移动/瞄准修复已于 2026-09-18 完成验收；射击完整矩阵及用户视听、真实切窗验收已于 2026-09-19 完成。旧 StrafeController / AnimatorAimBridge / CameraAimBridge / AimTargetDriver 不再挂载到交付角色；原脚本/控制器保留历史参考，不能与新方案共同启用。
 
 PlayerInputModel 拥有业务输入；PlayerModel.IsAiming 仍是 PlayerSystem 同步的镜像。Look 仅为相机表现输入。PlayerMotor 是唯一胶囊位移/根朝向消费者；来自 StarterAssets 的项目适配保留 2/5.335m/s、1.2 跳高与 -15 重力，供应商源文件不变。
 
@@ -56,6 +60,14 @@ AimModel/System 只保存值数据和 Utility 接口，不持有场景组件。P
 2026-09-18 输入修复已补齐持久化 Aim/Fire，加入绑定校验与生命周期清理，并将 SetAimStateCommand 改为先写 PlayerInputModel；自动回归 150 个断言通过。原故障证据见 [恢复记录](ENVIRONMENT_RECOVERY.md)，当前实现与验收边界见 [INPUT_BASELINE.md](INPUT_BASELINE.md)。
 
 输入自动回归已覆盖重新启用、错误配置、释放及模拟失焦；恢复阶段已获用户整体确认，瞄准修复由 `fix-over-shoulder-aim-locomotion` 完成，并于 2026-09-18 获用户单独验收，正式规格已同步。Look 为适配器直通，主 spec 已同步当前输入与生命周期契约。Jump 的 Model 表示按钮状态，下游 SA 缓冲只接收新按下请求，不能反向改写 Model。
+
+## 射击与目标所有权
+
+ShootingSystem 同时核对 AimModel 的 Solution 与 Snapshot：前者必须是当前帧 Ready，后者允许 Ready 或稳定的 MuzzleObstructed；过渡被遮挡状态覆盖时不会误放行。实际射线从最终枪口出发，命中最近环境/敌人，不以相机目标替代伤害目标。ShotId 由独立射击上下文和单调序号组成；上下文释放后旧请求无效。
+
+EnemyModel 注册表只保存值状态、碰撞体整数 ID 和去重水位；EnemyController 启用注册，禁用/销毁注销，并在死亡或外部注销时关闭碰撞。EnemySystem 提交注册/注销后发布类型事实，EnemyViewBinding 为每个 View 管理订阅、只读快照及身份隔离。EnemyPresentationView 独占 Renderer/Animator，机甲死亡动作结束后隐藏，胶囊使用立即隐藏配置。EnemyStatusView 在最终相机之后显示血量及减伤/易伤并处理遮挡，不拥有权威 HP；显示数值复用 DamageCalculation。系数 H 的设置经过 Command/System，资产只提供初值。当前实现/验收边界见 [敌人表现记录](ENEMY_PRESENTATION.md)。
+
+轻微后坐由 PlayerAimPresentation 接收射击事实，在下一帧最终对齐之前改变枢轴位移，继续由同一图和双臂约束求值。战斗效果与声部拥有独立世界空间运行根对象，命中点不会随角色移动。详细接口见 INTERFACE，运行与素材证据见 SHOOTING_BASELINE。
 
 ## Core 的现状与目标
 

@@ -8,6 +8,8 @@
 | [TODO.md](TODO.md) | 当前优先级、恢复门槛与下一步 |
 | [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md) | 环境、工具入口与验证命令 |
 | [ENVIRONMENT_RECOVERY.md](ENVIRONMENT_RECOVERY.md) | SDK/MCP 恢复、139 项测试与首次 Play Mode 的实际缺陷 |
+| [ENEMY_PRESENTATION.md](ENEMY_PRESENTATION.md) | 机甲模型/动画/状态 UI、生命周期与本次运行验收边界 |
+| [SHOOTING_BASELINE.md](SHOOTING_BASELINE.md) | 瞄准射击、胶囊伤害、素材接入与当前验证边界 |
 | [INPUT_BASELINE.md](INPUT_BASELINE.md) | 输入修复实现、150 项自动断言、用户阶段验收与归档记录 |
 | [GAME_DESIGN.md](GAME_DESIGN.md) | 玩法设计和待定决策；不代表全部已实现 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 当前模块、状态所有权、数据流与目标边界 |

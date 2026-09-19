@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2849e6ca54c98d4f8449ec1f673c997, type: 3}
+  m_Name: RifleFeedback
+  m_EditorClassIdentifier: 
+  _muzzlePrefab: {fileID: 100002, guid: a085f0aa1bb2bc94f963d5a620331d04, type: 3}
+  _tracerPrefab: {fileID: 100000, guid: 684713b0d5bc21d458bd049fff7435e1, type: 3}
+  _impactPrefab: {fileID: 100000, guid: 6e7a7140155bcfa48b36d0429f691a91, type: 3}
+  _deathPrefab: {fileID: 100000, guid: 6e7a7140155bcfa48b36d0429f691a91, type: 3}
+  _gunShots:
+  - {fileID: 8300000, guid: 493f742552fa1d04b978e72fa0ba7db0, type: 3}
+  - {fileID: 8300000, guid: 2a16d805389d64f46baead80db13d091, type: 3}
+  - {fileID: 8300000, guid: 1803e7eb14ee22e4e8dcfc4d5f39352a, type: 3}
+  _surfaceHits:
+  - {fileID: 8300000, guid: b12187930d6f4b04b8a14c4e942c7f93, type: 3}
+  - {fileID: 8300000, guid: ee945bf47a1d77342b0e71d7e4421695, type: 3}
+  - {fileID: 8300000, guid: 4baa43d1a2555714a9dcc3b0b06a220c, type: 3}
+  _enemyHits:
+  - {fileID: 8300000, guid: 4e6abf7c3e3fb594bb0fdd6dbd713716, type: 3}
+  - {fileID: 8300000, guid: 390e6d5686f9f034bb094a074d154504, type: 3}
+  - {fileID: 8300000, guid: a615af9796db06242a84e175dec40171, type: 3}
+  _muzzleLifetime: 0.045
+  _tracerLifetime: 0.045
+  _impactLifetime: 0.6
+  _deathLifetime: 0.8
+  _muzzleScale: 0.4
+  _tracerWidth: 0.035
+  _impactScale: 0.35
+  _deathScale: 1.2
+  _muzzleCapacity: 4
+  _tracerCapacity: 4
+  _impactCapacity: 16
+  _deathCapacity: 8
+  _gunVolume: 0.28
+  _surfaceVolume: 0.2
+  _enemyVolume: 0.25
+  _audioVoices: 24
+  _audioMinDistance: 2
+  _audioMaxDistance: 45
+  _recoilDistance: 0.025
+  _recoilRecovery: 0.09

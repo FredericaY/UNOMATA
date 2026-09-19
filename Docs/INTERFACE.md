@@ -17,7 +17,7 @@
 
 源码目前仅在 `CardChainCore/src/Unomata.Core/`。Core 无 `CardData.CanFollow()`。当前实现和数据流见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
-**实现 A5/A6 前必须确认**：本文的 `ChainCount / BasePot` 与 GAME_DESIGN 3.8“溢出充能不再影响 factor”存在矛盾；满档后 chain 若增长，现公式的 factor 也增长。另需将“骇入削减系数”与“敌人剩余减免率”区分，旧计划中的直接赋值并未实现，也不能当作已确认伤害公式。本轮保留原设计内容并登记冲突，不擅自选择玩法。
+**实现 A5/A6 前必须确认**：本文的 `ChainCount / BasePot` 与 GAME_DESIGN 3.8“溢出充能不再影响 factor”存在矛盾；满档后 chain 若增长，现公式的 factor 也增长。给定 factor 后的敌人消费端公式已在本轮讨论中确认，见文末“Unity 射击与敌人受击”；消费端现已实现并通过胶囊验证及用户验收，也不解决 Core 生成 factor 的上述争议。旧计划中的直接赋值未实现，不能再把骇入系数当作敌人剩余减免率。
 
 旧文档的“接口冻结”表示当时计划，不构成已实现、无歧义或本轮已验收的证明。
 
@@ -472,7 +472,7 @@ generate_options(state, config):
 
 `Unomata.Gameplay.AimSnapshot` 已实现并接入 SampleScene，整体验收状态见 [动画记录](AboutTheAnimation.md)。不会改变本文前述规划中的 Core/HackSession 接口。
 
-读取入口：`GameApp.Interface.SendQuery(new AimSnapshotQuery(sceneContext, frame))`。消费者必须在该帧 `PlayerAimPresentation` 完成之后读取；未完成、过期帧或旧场景代际不返回 Ready。Query 没有射线、事件或场景写入副作用。后续 Fire/弹丸接入尚未实现。
+读取入口：`GameApp.Interface.SendQuery(new AimSnapshotQuery(sceneContext, frame))`。消费者必须在该帧 `PlayerAimPresentation` 完成之后读取；未完成、过期帧或旧场景代际不返回 Ready。Query 没有射线、事件或场景写入副作用。本次 ShootingController 已在最终姿态之后接入射线射击消费，运行证据与用户验收记录见 SHOOTING_BASELINE；没有物理弹丸。
 
 | 字段 | 语义 |
 | --- | --- |
@@ -485,3 +485,23 @@ generate_options(state, config):
 | AimErrorDegrees | 实际枪管与目标连线的角误差 |
 
 写入流程由表现协调者发出 BeginAimContext、PrepareAimFrame、CompleteAimFrame、InvalidateAim Command，领域判断在 IAimSystem。Complete 提交最终枪口和握把可达性，不进行射击；普通走跑跳保持连续 Ready，只有实际举放枪处于 Transition。失焦、停用或退出使会话失效，清理不访问惰性入口创建新架构。
+
+## Unity 射击与敌人受击（2026-09-19 已验收归档）
+
+交付范围见 [unity-shooting-damage-loop](../openspec/changes/archive/2026-09-19-unity-shooting-damage-loop/proposal.md)；具体新类型和时序见其 [设计](../openspec/changes/archive/2026-09-19-unity-shooting-damage-loop/design.md)，代码已由 Unity 导入并接入正式/独立验证场景，领域、物理、完整输入回归与动作矩阵已有本次运行证据；用户已确认最终视听与真实切窗验收通过，见 [射击基线](SHOOTING_BASELINE.md)。
+
+- Fire Command 继续只写输入。射击系统在最终当帧姿态后消费右键瞄准与左键开火状态；已完成举枪时左键保持按下可连发，无腰射，无限弹药。
+- 实际枪口射线取得环境或敌人最近命中。稳定的枪口路径受阻仍可打在阻挡物上；过渡、内部起点、不可达、失效或旧帧不得开火，不能仅按 Blocked 状态统一放行。
+- 敌人状态独立保存基础减免率 R、骇入系数 H 和 HP；伤害 D 按 `D * (1 - R * (1 - clamp(H, 0, 1))) * (1 + max(H - 1, 0))` 结算。H>1 不 clamp，实际扣血不超过当前 HP，死亡仅一次。
+- 本阶段通过配置/调试命令覆盖指定胶囊的 H，后续 Linking 复用同一业务入口。Core 仍负责未来 H 的生成，消费端不计算接龙规则、不实现 H 的持续时间。
+- `ShotFiredEvent` 包含 ShotId、AimContext、Frame、起点/方向/终点/法线、HitKind、EnemyId 和 Damage。`EnemyDamageResult` 包含 D/R/H、RemainingReduction、ResolvedDamage、AppliedDamage、前后 HP；`EnemyDamagedEvent` 与 `EnemyDiedEvent` 携带该结果，死亡状态在事件之前提交。
+- `RegisterEnemyCommand(Guid, EnemySettings, int[])` / `UnregisterEnemyCommand(Guid)` 管理胶囊注册；`SetEnemyHackFactorCommand(Guid, float)` 覆盖 H；`EnemySnapshotQuery(Guid)` 返回只读 HP/R/H/存活状态。目标重新启用使用新 Guid，旧目标与已释放射击上下文的请求无效。
+- `BeginShootingCommand` / `TickShootingCommand` / `EndShootingCommand` 管理射击上下文，Command 无返回值；`SetFireInputCommand` 始终只写输入。新射击 Query/事件不会把 Collider/GameObject 送入权威 Model。
+- `ConfigureCombatAudioCommand` 提交声音配置快照，`SetMasterVolumeCommand` 经 AudioSystem 更新总音量。CombatAudioView 使用独立世界空间声部，原脚步/落地链路保留。
+- 已同步正式主规格：aimed-shooting、enemy-damage、shooting-feedback、audio-system、player-input-model；原 delta 随 change 归档保留。
+
+## Unity 敌人表现与生命周期（2026-09-19，已验收归档）
+
+本次 change 的运行与验收边界见 [敌人表现记录](ENEMY_PRESENTATION.md)。`EnemyRegisteredEvent(EnemySnapshot)` 在注册状态/碰撞映射提交后发布；`EnemyUnregisteredEvent(Guid)` 在实际移除后发布，失败注册和重复注销不产生成功事实。View 采用先订阅、后查询并匹配当前身份，旧事件不影响新实例。
+
+EnemyController 只处理注册和碰撞；EnemyPresentationView 管理模型动作与隐藏，EnemyStatusView 只显示当前 HP 及剩余减伤/额外易伤。死亡立即关闭碰撞和 UI，机甲播完动画后隐藏，胶囊仍立即隐藏。伤害公式、H 的覆盖接口及射击事实保持；本 change 的 enemy-damage、enemy-presentation、enemy-status-ui 三份 delta 已同步正式主规格并归档。

@@ -8,8 +8,10 @@ Recovery accepted by the user on **2026-09-18**. The pre-restart baseline was co
 
 - Implemented: card types, validation and option generation in the standalone Core; character/model integration, movement, aim cameras, QFramework input and audio bridges in Unity.
 - Accepted and archived on **2026-09-18**: [over-shoulder aiming and locomotion repair](openspec/changes/archive/2026-09-18-fix-over-shoulder-aim-locomotion/proposal.md). SampleScene now provides consistent muzzle alignment and two-hand grips, smooth movement blending, forward-only aimed sprint, and continuous jump poses. A/D/S and diagonals walk while aiming even with Shift; ordinary sprint remains available. Automated geometry, movement, input, lifecycle and 30/60/120fps checks are recorded separately from the user's final visual, audio and focus-recovery acceptance. All 47 tasks are complete and four capabilities are synced to main specs. See the [animation record](Docs/AboutTheAnimation.md). The superseded IK change remains historical reference.
-- Planned: complete hacking sessions/results, shooting, enemies, operational waves, hacking UI and integration.
-- Recovery verified: .NET SDK 8.0.425 is installed; all 139 Core tests pass and Unity MCP/compilation work. The input repair now restores Aim/Fire and lifecycle handling, with 150 automated regression assertions passing. The user has accepted the restored baseline. The serialized runtime helper on Audio has been removed; two independent Play/Stop sessions and audio playback checks pass with no Console errors or warnings. The acceptance record distinguishes automated evidence from the user's overall phase acceptance; it does not invent extra physical-input test logs. See the [input baseline record](Docs/INPUT_BASELINE.md).
+- Accepted and archived on **2026-09-19**: [aimed shooting and capsule damage](openspec/changes/archive/2026-09-19-unity-shooting-damage-loop/proposal.md) are connected in SampleScene and Sandbox_Shooting. Hold right mouse to aim and left mouse to fire; hip fire is disabled. The current rifle uses hitscan, infinite ammunition, per-target damage reduction/hack factors, vendor muzzle/tracer/impact effects, gun/impact sounds and light recoil. The full 417-case shooting/aim matrix, 30/120fps action checks and one-minute sustained-fire checks pass; the user has confirmed final visual/audio and physical focus-recovery acceptance. All 33 tasks are complete and five capabilities are synced to main specs. See the [shooting baseline](Docs/SHOOTING_BASELINE.md).
+- Accepted and archived on **2026-09-19**: [enemy presentation](openspec/changes/archive/2026-09-19-unity-enemy-presentation/proposal.md). SampleScene now uses mech_defender with idle/hit/death animations, health bars and reduction/vulnerability labels. Enemy runtime checks pass at 30/60/120fps; the capsule baseline remains in Sandbox_Shooting. See the [current evidence and play instructions](Docs/ENEMY_PRESENTATION.md).
+- Current character and basic combat presentation milestone is complete. The next scope will be discussed later; AI/waves, complete hacking sessions/results, hacking UI and integration remain unstarted directions.
+- Recovery evidence (2026-09-17–18): .NET SDK 8.0.425 is installed; all 139 Core tests pass and Unity MCP/compilation work. The input repair now restores Aim/Fire and lifecycle handling, with 150 automated regression assertions passing. The user has accepted the restored baseline. The serialized runtime helper on Audio has been removed; two independent Play/Stop sessions and audio playback checks pass with no Console errors or warnings. The acceptance record distinguishes automated evidence from the user's overall phase acceptance; it does not invent extra physical-input test logs. See the [input baseline record](Docs/INPUT_BASELINE.md).
 
 Start with the [restart review](Docs/PROJECT_REVIEW.md), [next steps](Docs/TODO.md) and [environment guide](Docs/DEVELOPMENT_SETUP.md).
 
@@ -20,7 +22,7 @@ Use **Unity 2022.3.62f3**, **URP 14.0.12** and **.NET 8 SDK** for the independen
 | Path | Responsibility |
 |---|---|
 | `Assets/_Project/` | Project-owned Unity scripts, scenes, animations and assets |
-| `Assets/_Project/Scenes/SampleScene.unity` | Current character prototype scene |
+| `Assets/_Project/Scenes/SampleScene.unity` | Accepted character, shooting, mech animation and status UI milestone |
 | `Assets/ThirdParty/` | Categorized vendor assets |
 | `Assets/QFramework/`, `Assets/QFrameworkData/` | Framework source and configuration; preserve paths |
 | `CardChainCore/` | Standalone Core library, xUnit tests and console scaffold |
@@ -42,8 +44,10 @@ Open the project with the pinned Unity Editor, then open SampleScene. The Editor
 
 - 已实现：独立 Core 的类型、接牌判定、选项生成；Unity 的角色/模型整合、移动、瞄准相机、QFramework 输入与音频桥接。
 - **2026-09-18 已验收并归档**：[移动与越肩瞄准修复](openspec/changes/archive/2026-09-18-fix-over-shoulder-aim-locomotion/proposal.md)。SampleScene 已具备一致枪口对齐、双手握枪、平滑运动混合、仅纯向前举枪奔跑及连续跳跃姿态。举枪 A/S/D 与斜向即使 Shift 也走路，普通奔跑保留。几何、动作、输入、生命周期及 30/60/120fps 自动证据与用户最终视觉、听感和失焦恢复验收分别记录；47 项任务全部完成，四项能力已同步主规格。见 [动画记录](Docs/AboutTheAnimation.md)。被替代的旧 IK change 保留历史参考。
-- 后续计划：完整骇入会话与结算、射击、敌人、可运行波次、骇入 UI 与双线联动。
-- 恢复验证：已安装 .NET SDK 8.0.425，本轮 139 项 Core 测试全部通过，Unity MCP 与编译可用。输入修复已补齐 Aim/Fire 和生命周期处理，150 个自动回归断言通过。用户已确认恢复基线可接受；Audio 运行时组件残留已清理，两次独立 Play/Stop 与音频播放复验通过，Console 零错误/警告；验收记录区分自动证据与用户整体阶段确认，不补写未提供的物理输入逐项日志，详见 [输入基线记录](Docs/INPUT_BASELINE.md)。
+- **2026-09-19 已验收并归档**：[瞄准射击与胶囊伤害](openspec/changes/archive/2026-09-19-unity-shooting-damage-loop/proposal.md) 已接入 SampleScene 与 Sandbox_Shooting。右键瞄准、左键连发，取消腰射；当前步枪使用射线命中、无限弹药、单目标减免/骇入系数结算、现有枪口/弹道/命中特效、声音与轻微后坐。完整 417 组射击/瞄准矩阵、30/120fps 动作与一分钟连发检查通过，用户已确认最终视觉/听感和真实切窗验收通过，33 项任务全部完成，五项能力已同步主规格，见 [射击基线](Docs/SHOOTING_BASELINE.md)。
+- **2026-09-19 已验收并归档**：[敌人基础表现](openspec/changes/archive/2026-09-19-unity-enemy-presentation/proposal.md)。SampleScene 已接入 mech_defender 的待机/受击/死亡动画、血条和减伤/易伤提示，敌人 30/60/120fps 运行检查通过；Sandbox_Shooting 保留原胶囊基线。试玩方法和本次证据见 [敌人表现记录](Docs/ENEMY_PRESENTATION.md)。
+- 当前人物与基础战斗表现小阶段已完成。下一步范围留待后续讨论；敌人 AI/波次、完整骇入会话与结算、骇入 UI 与双线联动仍是未启动方向。
+- 恢复阶段证据（2026-09-17–18）：已安装 .NET SDK 8.0.425，恢复时 139 项 Core 测试全部通过，Unity MCP 与编译可用。输入修复已补齐 Aim/Fire 和生命周期处理，150 个自动回归断言通过。用户已确认恢复基线可接受；Audio 运行时组件残留已清理，两次独立 Play/Stop 与音频播放复验通过，Console 零错误/警告；验收记录区分自动证据与用户整体阶段确认，不补写未提供的物理输入逐项日志，详见 [输入基线记录](Docs/INPUT_BASELINE.md)。
 
 阅读顺序：[重启回顾](Docs/PROJECT_REVIEW.md) → [近期待办](Docs/TODO.md) → [环境恢复](Docs/DEVELOPMENT_SETUP.md) → [文档索引](Docs/README.md)。
 

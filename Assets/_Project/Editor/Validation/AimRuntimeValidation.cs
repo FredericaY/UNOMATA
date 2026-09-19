@@ -10,7 +10,7 @@ namespace Unomata.Editor.Validation
     public static class AimRuntimeValidation
     {
         private static AimRuntimeInputDriver _driver;
-        public static string Start(string mode="smoke",int fps=60,bool record=false,bool resume=false)
+        public static string Start(string mode="smoke",int fps=60,bool record=false,bool resume=false,bool shooting=false)
         {
             if(!EditorApplication.isPlaying)throw new InvalidOperationException("Enter Play Mode first.");
             if(_driver!=null && _driver.Result!=null && _driver.Result.state=="running")
@@ -18,7 +18,7 @@ namespace Unomata.Editor.Validation
             Detach();
             if(_driver!=null && _driver.Fixture!=null)UnityEngine.Object.Destroy(_driver.Fixture);
             _driver=new AimRuntimeInputDriver(new GameObject("AimRuntimeValidation_Fixture"));
-            try{_driver.Configure(mode,fps,record,resume);}
+            try{_driver.Configure(mode,fps,record,resume,shooting);}
             catch(Exception error){_driver.AbortSetup(error);throw;}
             var loop=PlayerLoop.GetCurrentPlayerLoop();
             Insert(ref loop,typeof(UnityEngine.PlayerLoop.Update.ScriptRunBehaviourUpdate),

@@ -29,7 +29,7 @@
 
 ### Requirement: PlayerController 接管 PlayerInput 回调
 
-`PlayerController` SHALL 保持项目的 QFramework Controller 入口与执行顺序 -20，通过当前 `PlayerInput` 所使用的 **Player** Action Map 接收业务输入，并将 Move、Jump、Sprint、Aim、Fire 分别交给既有输入 Command。业务输入状态 SHALL 由 `PlayerInputModel` 保存；Fire 在本阶段仅表示输入，不产生射击。
+`PlayerController` SHALL 保持项目的 QFramework Controller 入口与执行顺序 -20，通过当前 `PlayerInput` 所使用的 **Player** Action Map 接收业务输入，并将 Move、Jump、Sprint、Aim、Fire 分别交给既有输入 Command。业务输入状态 SHALL 由 `PlayerInputModel` 保存；Fire 只表示输入意图，输入回调 SHALL 不直接执行射线、扣血或播放枪声，由独立射击系统在最终当帧姿态就绪后消费。
 
 启用接收前 SHALL 验证 PlayerInput、其动作资产、Player Map 及所需动作存在且类型兼容。验证失败时 SHALL 不留下部分业务订阅，五个业务输入值保持中立，报告含对象、资产/Map 和缺项名称的可操作错误；禁用或销毁 SHALL 不因此抛出空引用。配置恢复后重新启用 SHALL 能恢复输入，每个动作变化只处理一次。
 
@@ -53,25 +53,23 @@ Move SHALL 反映方向值，Jump/Sprint/Aim/Fire SHALL 反映真实按下或释
 
 #### Scenario: 冲刺和开火释放
 - **WHEN** Shift 按下后释放并产生当前 PassThrough Sprint 的归零回调，或鼠标左键按下后释放
-- **THEN** 对应 Sprint/Fire 状态 SHALL 从 true 回到 false，不能因回调仍处于 performed 阶段而卡在 true；Fire 不调用武器或伤害逻辑
+- **THEN** 对应 Sprint/Fire 状态 SHALL 从 true 回到 false，不能因回调仍处于 performed 阶段而卡在 true；Fire 输入回调不直接调用武器或伤害逻辑，射击系统读取释放状态后停止后续发射
 
 ### Requirement: SetMoveInputCommand / SetJumpInputCommand / SetSprintInputCommand / SetFireInputCommand
 
-`Unomata.Gameplay` 命名空间 SHALL 在 `Assets/_Project/Scripts/Gameplay/Commands/` 目录下定义以下 4 个命令类，均继承 `AbstractCommand`：
-- `SetMoveInputCommand`：构造器接收 `Vector2 move`；`OnExecute` 写 `this.GetModel<PlayerInputModel>().Move.Value = move`
+`Unomata.Gameplay` 命名空间 SHALL 在 `Assets/_Project/Scripts/Gameplay/Commands/` 目录下保留以下 4 个命令类，均继承 `AbstractCommand`：
+- `SetMoveInputCommand`：构造器接收 `Vector2 move`；`OnExecute` 写 `PlayerInputModel.Move.Value = move`
 - `SetJumpInputCommand`：构造器接收 `bool jump`；`OnExecute` 写 `PlayerInputModel.Jump.Value`
 - `SetSprintInputCommand`：构造器接收 `bool sprint`；`OnExecute` 写 `PlayerInputModel.Sprint.Value`
-- `SetFireInputCommand`：构造器接收 `bool fire`；`OnExecute` **骨架空实现**（写 `PlayerInputModel.Fire.Value`，实际射击逻辑 B2a 填充）
+- `SetFireInputCommand`：构造器接收 `bool fire`；`OnExecute` 写 `PlayerInputModel.Fire.Value`，SHALL NOT 执行射击规则、射线、伤害或声音；射击由独立业务系统消费输入
 
 #### Scenario: SetMoveInputCommand 写入 Model
-
 - **WHEN** 通过 `this.SendCommand(new SetMoveInputCommand(Vector2.up))` 发出命令
 - **THEN** `PlayerInputModel.Move.Value` SHALL 等于 `Vector2.up`，Console 无红错
 
 #### Scenario: SetFireInputCommand 骨架不抛异常
-
 - **WHEN** 通过 `this.SendCommand(new SetFireInputCommand(true))` 发出命令
-- **THEN** Console SHALL 无红色错误，`PlayerInputModel.Fire.Value` SHALL 变为 `true`
+- **THEN** Console SHALL 无红色错误，`PlayerInputModel.Fire.Value` SHALL 变为 `true`；单独执行该输入写入 SHALL 不直接产生射击或伤害
 
 ---
 

@@ -87,6 +87,7 @@ manifest 配置了名为 Unity China 的 scoped registry：`https://packages.uni
 | SciFiEffects (FORGE3D) | 科幻 VFX 特效（爆炸 / 能量 / Warp / Holographic / Turret 等） | `Assets/ThirdParty/VFX/SciFiEffects/` | ⚠ 已迁移-19 mat Shader 缺失 + FORGE3D 框架依赖（详见下方注） |
 | SciFiWeaponsBulletHell | 科幻武器音效（射击 / 爆炸 / UI） | `Assets/ThirdParty/Audio/SciFiWeaponsBulletHell/` | ✅ 已迁移 |
 | BehaviorDesigner (Opsive) | 敌人 AI Behavior Tree 框架 | `Assets/ThirdParty/AI/BehaviorDesigner/` | ✅ 已迁移-Sandbox demo |
+| TextMesh Pro 资源 | 敌人头顶字体与基础 UI 支持 | `Assets/ThirdParty/UI/TextMeshPro/` | ✅ 已归位并验证；来源 TMP 3.0.7 导入及既有共享资源 |
 | UI 包（待选） | HUD / 副线接龙 UI / 骇入面板 / 主菜单 / 结算等表现层素材 | `Assets/ThirdParty/UI/<PackageName>/` | ⏳ Phase 3 副线 UI 阶段前选型；计划先用 Unity 原生 UGUI / TMP 占位，骇入 UI 尚未实现 |
 
 ### 状态语义
@@ -200,3 +201,37 @@ Core 层采用**独立 .NET 8 控制台工程**方案：开发期在 `CardChainC
 用户最终观感复验否定方向快跑后，`Run_45…315` 保留为未采用实验资产，已从当前控制器和 Footsteps 配置断开；`AimDirectionalRunSetup.Configure()` 现仅配置纯向前 Run 与各向 AimWalk，不再烘焙方向跑。
 
 跳跃时序修订复用项目 `JumpStart.anim`（FRA R_Jump_AirR 副本），JumpStart/InAir 状态共享其物理相位；旧 `InAir.anim`（AirL）不再进入当前控制器。未修改 fbx 或包版本。
+
+## 射击素材接入（2026-09-19，整体视听验收通过）
+
+| 项目资产/配置 | 来源与本次处理 |
+|---|---|
+| `Assets/_Project/VFX/Shooting/RifleMuzzle.prefab` | SciFiEffects / Vulcan / vulcan_muzzle；项目副本，网格和灯光明确启停，灯光禁阴影 |
+| `Assets/_Project/VFX/Shooting/RifleTracer.prefab` | SciFiEffects / Vulcan / vulcan_projectile；仅渲染捕获的枪口到命中点，不挂供应商弹丸/伤害逻辑 |
+| `Assets/_Project/VFX/Shooting/RifleImpact.prefab` | SciFiEffects / Vulcan / vulcan_impact；项目副本，粒子非循环且不自销毁，项目池负责回收；死亡采用放大的同一效果 |
+| `Assets/_Project/Settings/Combat/RifleFeedback.asset` | 绑定上述效果与现有 AudioClip，保存音量、尺度、寿命、池容量和轻微后坐参数 |
+| 枪声 | SciFiWeaponsBulletHell / AUDIO/Shoot/Rifle_Shotgun_Pistol / SFX_SCIFI_WEAPON_Rifle_Shoot_1、2、3.wav |
+| 表面命中音 | SciFiEffects / Sci-Fi Effects/Sounds / impact_projectile_001、002、003.wav |
+| 敌人命中音 | 同上 / impact_projectile_metal_001、002、004.wav |
+| `EnemyCapsule.prefab`、`Capsule0/1/2.asset`、项目 Capsule/Backstop 材质 | Unity 胶囊、项目状态适配与 URP/Lit 材质，供规则验证；真实敌人资产下一 change 接入 |
+
+当前采用的 Vulcan 材质引用已有 FORGE3D/URP/Additive 和 FORGE3D/URP/AlphaBlended，Editor 支持检查及实际画面未出现粉色材质；没有因此修复包中其余未采用的 Shader。素材原件、fbx、音频源文件和包版本不变，沿用原资产授权记录的待补边界。
+
+R_Shoot / R_AimIdle_AutoShoot 实测长度约 0.967 秒、带 SwitchSocket 事件。本次采用程序化轻微后坐位移并由已验收的武器/双臂求值链重新对准；不把供应商事件引入运行链。采用路径及运行报告见 [射击基线](SHOOTING_BASELINE.md)。
+
+## 敌人表现接入（2026-09-19，已验收归档）
+
+- 项目 `Prefabs/Enemies/MechDefender.prefab` 包装 `Assets/ThirdParty/Characters/Enemy/MechPack/Prefabs/Animated/mech_defender.prefab`，引用原骨架、网格和 URP/Lit 材质；项目包装移除原 Rigidbody/Collider，以自有躯干碰撞适配接入。
+- 项目 `Animations/Enemies/MechDefender/{Idle,Hit,Death}.anim` 分别来自同包 `Animations/mech_defender@animations.FBX` 的 idle_01、damage_01、death_01；项目 controller 仅包含三个状态，关闭 Root Motion。使用 AnimationUtility 清理项目 clip 事件，原文件不改。
+- 项目 `Settings/Combat/Enemies/` 保存表现与数值配置；原 EnemyCapsule 迁移到立即隐藏的独立 View，保留胶囊回归。
+- 头顶 UI 使用现有 UGUI/TMP 包；字体直接引用 `Assets/ThirdParty/UI/TextMeshPro/Resources/Fonts & Materials/LiberationSans SDF.asset` 及其已有 atlas/material。为补齐初始化新增项目 `Settings/Resources/TMP Settings.asset`，验收后用户导入的 TMP 示例与重复配置已按资产规则清理，不引入外部字体。
+- 本节省略前缀的项目路径均位于 `Assets/_Project/`；引擎/包无升级，原资产来源版本与授权缺项继续保持待补，不推断再分发许可。当前采用链路的运行证据见 [ENEMY_PRESENTATION.md](ENEMY_PRESENTATION.md)。
+
+## TextMesh Pro 资源归位（2026-09-19）
+
+- 来源：Unity 的 TMP 导入提示，当前安装 com.unity.textmeshpro 3.0.7；与 CombatGirls 既有 TMP 小目录共用的字体/Shader 通过 AssetDatabase 保 GUID 统一迁到 Assets/ThirdParty/UI/TextMeshPro。
+- 保留范围：Fonts/LiberationSans.ttf、Resources/Fonts & Materials 的 SDF 与 Fallback 资产、Shaders/TMP_SDF-Mobile.shader、Shaders/TMPro_Properties.cginc 和 Fonts/LiberationSans - OFL.txt。原供应商源内容保持，导入器对三份 meta 的非功能性 licenseType 改写已恢复。
+- 字体随附许可为 SIL Open Font License 1.1，文件记录 Google（2010）及 Red Hat（2012）版权与保留字体名；原许可文本完整保留。此处不以 Unity meta 的 licenseType 字段推断版权授权。
+- 未引用的 Examples & Extras、演示脚本、重复 TMP Settings 和其他未采用资源已裁剪；项目 Settings/Resources/TMP Settings.asset 是唯一运行配置。根 Assets/TextMesh Pro 以及 CombatGirls 内旧 TMP 目录均已消除。
+- 没有新增或升级 Package Manager 依赖。本次新增许可文件很小，迁移的原字体二进制约 350KB，原 SDF 为已跟踪的文本资产；沿用普通 Git，无新增大型二进制或 LFS 配置。
+- GUID、依赖、保存引用与实际字形/UI 复验见 [敌人表现记录](ENEMY_PRESENTATION.md)。其他第三方包授权的既有待补项不变。

@@ -33,6 +33,7 @@ namespace Unomata.Editor.Validation
         {
             public string name;
             public int samples,invalid,frameMismatch,doubleEvaluation;
+            public int shots,shotFrameMismatch;
             public float maxRestrictedSpeed;
             public int unexpectedSprintClip,rawSprintChanges;
             public float maxAim,maxPublishedError,maxRightPosition,maxLeftPosition,maxRightRotation,maxLeftRotation;
@@ -52,12 +53,15 @@ namespace Unomata.Editor.Validation
         [Serializable] public sealed class RunResult
         {
             public string state="idle",mode,currentCase,error;
-            public int targetFps,completed,total;
+            public int targetFps,completed,total,totalShots;
+            public bool shooting;
             public bool cleanupComplete;
             public List<CaseResult> cases=new List<CaseResult>();
         }
 
         private Vector2 _activeMove;private bool _activeAim,_activeSprint;
+        private bool _shooting;
+        private IUnRegister _shotSubscription;
         private readonly List<AnimatorClipInfo> _sampleClips=new List<AnimatorClipInfo>();
         private readonly List<Case> _cases=new List<Case>();
         private readonly List<(GameObject Object,int Layer)> _layers=new List<(GameObject,int)>();
@@ -90,11 +94,13 @@ namespace Unomata.Editor.Validation
         private Texture2D _recordPixels;
         public RunResult Result { get; private set; }
 
-        public void Configure(string mode,int fps,bool record,bool resume=false)
+        public void Configure(string mode,int fps,bool record,bool resume=false,bool shooting=false)
         {
             if(!new[]{"smoke","showcase","feedback","turns","matrix","categories","sprint-rule","jump-baseline","jump-check"}.Contains(mode))throw new ArgumentException("Unknown validation mode.");
             BuildCases(mode);
-            _folder=".utmp/aim-repair/"+mode+"-"+fps;
+            _shooting=shooting;
+            if(shooting&&resume)throw new ArgumentException("Shooting runs require fresh evidence.");
+            _folder=(shooting?".utmp/shooting/aim-":".utmp/aim-repair/")+mode+"-"+fps;
             Directory.CreateDirectory(_folder);
             int totalCases=_cases.Count;
             var retained=new List<CaseResult>();
@@ -111,7 +117,7 @@ namespace Unomata.Editor.Validation
                 if(retained.Any(x=>!_cases.Any(c=>c.Name==x.name)))throw new InvalidOperationException("Unknown retained case.");
                 _cases.RemoveAll(c=>retained.Any(x=>x.name==c.Name));
             }
-            Result=new RunResult{state="running",mode=mode,targetFps=fps,total=totalCases,cases=retained,completed=retained.Count};
+            Result=new RunResult{state="running",mode=mode,targetFps=fps,total=totalCases,cases=retained,completed=retained.Count,shooting=shooting};
             _view=SceneManager.GetActiveScene().GetRootGameObjects()
                 .SelectMany(x=>x.GetComponentsInChildren<PlayerAimPresentation>()).Single();
             _motor=_view.Motor;_input=_motor.GetComponent<StarterAssetsInputs>();
@@ -120,6 +126,7 @@ namespace Unomata.Editor.Validation
             _camera=Camera.main;_brain=_camera.GetComponent<CinemachineBrain>();
             _audio=SceneManager.GetActiveScene().GetRootGameObjects().Select(x=>x.GetComponent<AudioBridge>()).FirstOrDefault(x=>x!=null);
             _app=GameApp.Interface;_inputModel=_app.GetModel<PlayerInputModel>();
+            if(shooting)_shotSubscription=_app.RegisterEvent<ShotFiredEvent>(RecordShot);
             _startPosition=_motor.transform.position;_startRotation=_motor.transform.rotation;
             _startYaw=_motor.OrbitYaw;_startPitch=_motor.OrbitPitch;
             _controllerEnabled=_controller.enabled;_adapterEnabled=_adapter.enabled;
@@ -309,10 +316,20 @@ namespace Unomata.Editor.Validation
                 _app.SendCommand(new SetMoveInputCommand(move));
                 _app.SendCommand(new SetSprintInputCommand(sprint));
                 _app.SendCommand(new SetJumpInputCommand(jump));
+                _app.SendCommand(new SetFireInputCommand(_shooting && aim && _age>=Warmup));
                 _input.move=move;_input.sprint=sprint;_input.jump=jump;
                 _input.look=new Vector2(c.YawRate*(_motor.GetComponent<UnityEngine.InputSystem.PlayerInput>().currentControlScheme=="KeyboardMouse"?Time.deltaTime:1f),0);
             }
             catch(Exception ex){Fail(ex);}
+        }
+
+        private void RecordShot(ShotFiredEvent shot)
+        {
+            if(!_running || _current==null || _age<Warmup)return;
+            _current.shots++;Result.totalShots++;
+            if(shot.Frame!=Time.frameCount || _view.PoseFrame!=shot.Frame || shot.AimContext!=_view.ContextId ||
+                Vector3.Distance(shot.Origin,_view.Muzzle.position)>0.0001f ||
+                AimGeometry.AngleDegrees(shot.Direction,_view.Muzzle.forward)>0.05f)_current.shotFrameMismatch++;
         }
 
         private void OnCameraUpdated(CinemachineBrain brain)
@@ -391,6 +408,7 @@ namespace Unomata.Editor.Validation
                     _current.passed=_current.invalid==0&&_current.frameMismatch==0&&_current.doubleEvaluation==0&&
                         _current.maxAim<=limit&&_current.maxPublishedError<=0.05f&&_current.maxRightPosition<=0.01f&&_current.maxLeftPosition<=0.01f&&
                         _current.maxRightRotation<=2&&_current.maxLeftRotation<=2;
+                    if(_shooting)_current.passed &= _current.shotFrameMismatch==0 && (!c.Aim || _current.shots>0);
                     bool permittedRun=c.Sprint&&(!c.Aim||(c.Move.y>0&&Mathf.Abs(c.Move.x)<0.0001f));
                     if(c.Move!=Vector2.zero)_current.passed &= _current.maxSpeed>=(permittedRun?5.335f:2f)*0.85f;
                     _current.passed &= _current.maxRestrictedSpeed<=2.002f && _current.rawSprintChanges==0 && _current.unexpectedSprintClip==0;
@@ -494,7 +512,7 @@ namespace Unomata.Editor.Validation
         {
             var json=JsonConvert.SerializeObject(Result,Formatting.Indented);
             File.WriteAllText(_folder+"/report.json",json);
-            if(Result.state!="running") { Directory.CreateDirectory(".utmp/aim-repair/history"); File.WriteAllText(".utmp/aim-repair/history/"+Result.mode+"-"+Result.targetFps+"-"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff")+".json",json); }
+            if(Result.state!="running") { var history=_shooting?".utmp/shooting/history":".utmp/aim-repair/history"; Directory.CreateDirectory(history); File.WriteAllText(history+"/"+Result.mode+"-"+Result.targetFps+"-"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff")+".json",json); }
         }
         private void Finish(){Result.state=Result.cases.All(x=>x.passed)?"passed":"failed";Cleanup();Save();}
         private void Fail(Exception ex){Result.state="failed";Result.error=ex.ToString();Cleanup();Save();}
@@ -511,6 +529,7 @@ namespace Unomata.Editor.Validation
         {
             if(_cleaning)return;_cleaning=true;_running=false;
             CinemachineCore.CameraUpdatedEvent.RemoveListener(OnCameraUpdated);
+            _shotSubscription?.UnRegister();_shotSubscription=null;
             foreach(var item in _layers)if(item.Object!=null)item.Object.layer=item.Layer;
             _layers.Clear();
             if(_motor!=null)

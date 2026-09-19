@@ -71,6 +71,8 @@ namespace Unomata.Editor.Validation
             try
             {
                 Application.runInBackground = true; // Restored in finally; not a PlayerSettings change.
+                foreach (var shooting in Object.FindObjectsOfType<ShootingController>())
+                    SuspendScene(shooting); // Isolate input writes from the newly installed fire consumer.
                 foreach (var pc in Object.FindObjectsOfType<PlayerController>())
                     SuspendScene(pc);
                 foreach (var adapter in Object.FindObjectsOfType<SAInputAdapter>())

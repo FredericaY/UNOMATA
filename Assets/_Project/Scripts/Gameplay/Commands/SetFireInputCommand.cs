@@ -3,7 +3,7 @@ using QFramework;
 namespace Unomata.Gameplay
 {
     /// <summary>
-    /// 设置射击输入命令（骨架）。B2a 阶段填充实际射击逻辑。
+    /// 只更新射击输入意图；ShootingSystem 在本帧姿态完成后执行射击。
     /// </summary>
     public class SetFireInputCommand : AbstractCommand
     {
@@ -14,7 +14,6 @@ namespace Unomata.Gameplay
         protected override void OnExecute()
         {
             this.GetModel<PlayerInputModel>().Fire.Value = _fire;
-            // TODO B2a: 在此处添加射击逻辑
         }
     }
 }

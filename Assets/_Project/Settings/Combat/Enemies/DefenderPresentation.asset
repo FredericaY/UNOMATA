@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c291bb78947558c4eba1ab6856e2f17b, type: 3}
+  m_Name: DefenderPresentation
+  m_EditorClassIdentifier: 
+  _animated: 1
+  _idle: {fileID: 7400000, guid: b96934cb0657bcf44b4f73e5a56435be, type: 2}
+  _hit: {fileID: 7400000, guid: a890ce3bde191784dab96c76737d654e, type: 2}
+  _death: {fileID: 7400000, guid: 676fd51ffda00e14a95f7479b87bb1f7, type: 2}
+  _transitionSeconds: 0.05
+  _completionGrace: 0.75
